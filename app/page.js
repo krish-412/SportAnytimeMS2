@@ -28,8 +28,8 @@ const DIFFICULTY_LEVELS = ['Beginner', 'Intermediate', 'Advanced', 'Professional
 
 export default function Home() {
   const [theme, setTheme] = useState('dark');
-  const [view, setView] = useState('auth'); // 'auth' | 'onboarding' | 'dashboard'
-  const [authTab, setAuthTab] = useState('login'); // 'login' | 'signup'
+  const [view, setView] = useState('auth'); 
+  const [authTab, setAuthTab] = useState('login'); 
   
   // Auth Form State
   const [fullName, setFullName] = useState('');
@@ -55,7 +55,6 @@ export default function Home() {
     document.documentElement.setAttribute('data-theme', theme);
   }, [theme]);
 
-  // Email validation rule
   const handleEmailChange = (val) => {
     setEmail(val);
     if (val.length > 0 && !val.toLowerCase().endsWith('@u.nus.edu')) {
@@ -65,7 +64,6 @@ export default function Home() {
     }
   };
 
-  // Password strength logic
   const getPasswordStrength = () => {
     if (!password) return { score: 0, color: 'transparent', label: '' };
     if (password.length < 6) return { score: 33, color: '#EF4444', label: 'Weak' };
@@ -161,7 +159,6 @@ export default function Home() {
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-      {/* Theme Toggle Float */}
       <button
         onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
         style={{
@@ -184,10 +181,8 @@ export default function Home() {
         {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
       </button>
 
-      {/* SCREEN 1: AUTHENTICATION */}
       {view === 'auth' && (
         <div className="page-transition" style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-          {/* Top 40% Hero Section */}
           <div style={{
             height: '40vh',
             background: 'linear-gradient(160deg, #0F172A 0%, #1E3A5F 50%, #0F172A 100%)',
@@ -212,7 +207,6 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Bottom 60% Form Sheet */}
           <div style={{
             flex: 1,
             backgroundColor: 'var(--card-surface)',
@@ -223,7 +217,6 @@ export default function Home() {
             display: 'flex',
             flexDirection: 'column'
           }}>
-            {/* Tab Switcher */}
             <div style={{ display: 'flex', borderBottom: 'var(--border)', marginBottom: '24px', position: 'relative' }}>
               <button
                 onClick={() => setAuthTab('login')}
@@ -261,7 +254,6 @@ export default function Home() {
               </button>
             </div>
 
-            {/* Auth Form */}
             <form onSubmit={handleAuthSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px', flex: 1 }}>
               {authTab === 'signup' && (
                 <div>
@@ -340,9 +332,9 @@ export default function Home() {
 
                 {authTab === 'login' && (
                   <div style={{ textAlign: 'right', marginTop: '8px' }}>
-                    <a href="#" style={{ fontSize: '13px', color: '#3B82F6', textDecoration: 'none' }}>
+                    <span style={{ fontSize: '13px', color: '#3B82F6', cursor: 'pointer' }}>
                       Forgot password?
-                    </a>
+                    </span>
                   </div>
                 )}
               </div>
@@ -395,10 +387,8 @@ export default function Home() {
         </div>
       )}
 
-      {/* SCREEN 2: ONBOARDING */}
       {view === 'onboarding' && (
         <div className="page-transition" style={{ minHeight: '100vh', padding: '20px', display: 'flex', flexDirection: 'column' }}>
-          {/* Top Progress Header */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '32px' }}>
             {onboardingStep > 1 ? (
               <button
@@ -409,7 +399,6 @@ export default function Home() {
               </button>
             ) : <div style={{ width: 24 }} />}
 
-            {/* Dots */}
             <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
               {[1, 2, 3].map((step) => (
                 <div
@@ -427,7 +416,6 @@ export default function Home() {
             <div style={{ width: 24 }} />
           </div>
 
-          {/* STEP 1: Profile Photo & Display Name */}
           {onboardingStep === 1 && (
             <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
               <h1 style={{ fontSize: '24px', fontWeight: 800, marginBottom: '6px' }}>Set up your profile</h1>
@@ -500,7 +488,6 @@ export default function Home() {
             </div>
           )}
 
-          {/* STEP 2: Sport Selection */}
           {onboardingStep === 2 && (
             <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
               <h1 style={{ fontSize: '24px', fontWeight: 800, marginBottom: '6px' }}>What do you play?</h1>
@@ -572,10 +559,9 @@ export default function Home() {
             </div>
           )}
 
-          {/* STEP 3: Skill Level */}
           {onboardingStep === 3 && (
             <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
-              <h1 style={{ fontSize: '24px', fontWeight: 800, marginBottom: '6px' }}>What's your level?</h1>
+              <h1 style={{ fontSize: '24px', fontWeight: 800, marginBottom: '6px' }}>What&apos;s your level?</h1>
               <p style={{ fontSize: '14px', color: '#64748B', marginBottom: '20px' }}>Be honest — it helps you find the right game.</p>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '55vh', overflowY: 'auto' }}>
@@ -643,7 +629,6 @@ export default function Home() {
         </div>
       )}
 
-      {/* DASHBOARD PLACEHOLDER (Ready for Step 6) */}
       {view === 'dashboard' && (
         <div className="page-transition" style={{ padding: '32px 20px', textAlign: 'center' }}>
           <h1 style={{ fontSize: '28px', fontWeight: 800, marginBottom: '12px' }}>Welcome to SportAnytime!</h1>
