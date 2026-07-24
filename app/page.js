@@ -65,6 +65,35 @@ function BottomNav({ currentView, setView }) {
   );
 }
 
+function ShareModal({ isOpen, onShare, onDismiss, actionText }) {
+  if (!isOpen) return null;
+  return (
+    <div className="page-transition" style={{
+      position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
+      backgroundColor: 'rgba(0,0,0,0.7)', zIndex: 100, display: 'flex',
+      alignItems: 'center', justifyContent: 'center', padding: '20px'
+    }}>
+      <div style={{
+        backgroundColor: 'var(--card-surface)', borderRadius: '24px', padding: '24px',
+        width: '100%', maxWidth: '340px', textAlign: 'center', border: 'var(--border)',
+        boxShadow: '0 20px 40px rgba(0,0,0,0.2)'
+      }}>
+        <Globe size={48} color="#3B82F6" style={{ margin: '0 auto 16px' }} />
+        <h3 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '8px' }}>Share to Community?</h3>
+        <p style={{ fontSize: '14px', color: '#64748B', marginBottom: '24px', lineHeight: 1.5 }}>
+          Let your followers know you {actionText} to get more people in the game.
+        </p>
+        <button onClick={onShare} className="btn-primary" style={{ marginBottom: '12px' }}>
+          Share to Feed
+        </button>
+        <button onClick={onDismiss} className="btn-primary" style={{ backgroundColor: 'transparent', border: '1.5px solid #334155', color: '#94A3B8', boxShadow: 'none' }}>
+          Keep it Private
+        </button>
+      </div>
+    </div>
+  );
+}
+
 const GLOBAL_SPORTS = [
   'Football', 'Basketball', 'Badminton', 'Tennis', 'Volleyball', 
   'Swimming', 'Table Tennis', 'Boxing', 'Gym / Weightlifting', 
@@ -99,7 +128,7 @@ const SPORT_GRADIENTS = {
 // --- SOCIAL FEED FLOW ---
 
 function SocialPage({ theme, setTheme }) {
-  const [tab, setTab] = useState('foryou'); // 'foryou' | 'following'
+  const [tab, setTab] = useState('foryou');
   const [likedPosts, setLikedPosts] = useState({});
   const [followingUsers, setFollowingUsers] = useState({});
 
@@ -111,15 +140,8 @@ function SocialPage({ theme, setTheme }) {
     { id: 5, user: 'Jordan Lee', time: '1d ago', text: 'reached Advanced level in Basketball 📈', activity: null },
   ];
 
-  const handleLike = (id) => {
-    setLikedPosts(prev => ({ ...prev, [id]: !prev[id] }));
-  };
-
-  const handleFollow = (user) => {
-    setFollowingUsers(prev => ({ ...prev, [user]: !prev[user] }));
-  };
-
-  // If on 'following' tab, filter the feed. If empty, it triggers empty state.
+  const handleLike = (id) => setLikedPosts(prev => ({ ...prev, [id]: !prev[id] }));
+  const handleFollow = (user) => setFollowingUsers(prev => ({ ...prev, [user]: !prev[user] }));
   const displayFeed = tab === 'foryou' ? MOCK_FEED : MOCK_FEED.filter(post => followingUsers[post.user]);
 
   return (
@@ -130,16 +152,10 @@ function SocialPage({ theme, setTheme }) {
           {theme === 'dark' ? <Sun size={22} color="#64748B" /> : <Moon size={22} color="#64748B" />}
         </button>
       </div>
-
       <div style={{ display: 'flex', borderBottom: 'var(--border)', position: 'relative' }}>
-        <button onClick={() => setTab('foryou')} style={{ flex: 1, padding: '12px 0', background: 'none', border: 'none', color: tab === 'foryou' ? 'var(--text-primary)' : '#94A3B8', fontWeight: tab === 'foryou' ? 700 : 400, fontSize: '15px', cursor: 'pointer', borderBottom: tab === 'foryou' ? '2px solid #3B82F6' : '2px solid transparent', transition: 'all 200ms ease' }}>
-          For You
-        </button>
-        <button onClick={() => setTab('following')} style={{ flex: 1, padding: '12px 0', background: 'none', border: 'none', color: tab === 'following' ? 'var(--text-primary)' : '#94A3B8', fontWeight: tab === 'following' ? 700 : 400, fontSize: '15px', cursor: 'pointer', borderBottom: tab === 'following' ? '2px solid #3B82F6' : '2px solid transparent', transition: 'all 200ms ease' }}>
-          Following
-        </button>
+        <button onClick={() => setTab('foryou')} style={{ flex: 1, padding: '12px 0', background: 'none', border: 'none', color: tab === 'foryou' ? 'var(--text-primary)' : '#94A3B8', fontWeight: tab === 'foryou' ? 700 : 400, fontSize: '15px', cursor: 'pointer', borderBottom: tab === 'foryou' ? '2px solid #3B82F6' : '2px solid transparent', transition: 'all 200ms ease' }}>For You</button>
+        <button onClick={() => setTab('following')} style={{ flex: 1, padding: '12px 0', background: 'none', border: 'none', color: tab === 'following' ? 'var(--text-primary)' : '#94A3B8', fontWeight: tab === 'following' ? 700 : 400, fontSize: '15px', cursor: 'pointer', borderBottom: tab === 'following' ? '2px solid #3B82F6' : '2px solid transparent', transition: 'all 200ms ease' }}>Following</button>
       </div>
-
       <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
         {tab === 'following' && displayFeed.length === 0 ? (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', paddingTop: '60px', textAlign: 'center' }}>
@@ -150,49 +166,31 @@ function SocialPage({ theme, setTheme }) {
         ) : (
           displayFeed.map((post) => (
             <div key={post.id} style={{ borderRadius: '16px', backgroundColor: 'var(--card-surface)', boxShadow: '0 1px 3px rgba(0,0,0,0.06)', border: 'var(--border)', padding: '16px' }}>
-              
               <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
-                <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'linear-gradient(135deg, #3B82F6, #1E3A5F)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', marginRight: '12px' }}>
-                  <User size={20} />
-                </div>
+                <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'linear-gradient(135deg, #3B82F6, #1E3A5F)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', marginRight: '12px' }}><User size={20} /></div>
                 <div style={{ flex: 1 }}>
                   <span style={{ fontSize: '14px', fontWeight: 700 }}>{post.user}</span>
                   <span style={{ fontSize: '13px', color: '#94A3B8' }}> · {post.time}</span>
                 </div>
-                <button 
-                  onClick={() => handleFollow(post.user)}
-                  style={{
-                    padding: '4px 12px', borderRadius: '999px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', transition: 'all 150ms ease',
-                    border: followingUsers[post.user] ? 'none' : '1px solid #3B82F6',
-                    backgroundColor: followingUsers[post.user] ? '#1E3A5F' : 'transparent',
-                    color: '#3B82F6'
-                  }}
-                >
+                <button onClick={() => handleFollow(post.user)} style={{ padding: '4px 12px', borderRadius: '999px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', transition: 'all 150ms ease', border: followingUsers[post.user] ? 'none' : '1px solid #3B82F6', backgroundColor: followingUsers[post.user] ? '#1E3A5F' : 'transparent', color: '#3B82F6' }}>
                   {followingUsers[post.user] ? 'Following' : 'Follow'}
                 </button>
               </div>
-
               <div style={{ fontSize: '14px', color: 'var(--text-primary)', marginBottom: post.activity ? '12px' : '16px' }}>
                 <span style={{ fontWeight: 600 }}>{post.user}</span> {post.text}
               </div>
-
               {post.activity && (
                 <div style={{ backgroundColor: 'var(--input-bg)', borderRadius: '8px', padding: '6px 12px', display: 'inline-flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
                   <span style={{ fontSize: '14px' }}>{SPORT_EMOJIS[post.activity.sport]}</span>
                   <span style={{ fontSize: '12px', color: '#64748B' }}>{post.activity.venue} · {post.activity.date}</span>
                 </div>
               )}
-
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748B', paddingTop: post.activity ? 0 : 0 }}>
-                <button 
-                  onClick={() => handleLike(post.id)}
-                  style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'flex', alignItems: 'center', transition: 'transform 200ms cubic-bezier(0.175, 0.885, 0.32, 1.275)', transform: likedPosts[post.id] ? 'scale(1.1)' : 'scale(1)' }}
-                >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748B' }}>
+                <button onClick={() => handleLike(post.id)} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'flex', alignItems: 'center', transition: 'transform 200ms cubic-bezier(0.175, 0.885, 0.32, 1.275)', transform: likedPosts[post.id] ? 'scale(1.1)' : 'scale(1)' }}>
                   <Heart size={20} color={likedPosts[post.id] ? '#EF4444' : '#64748B'} fill={likedPosts[post.id] ? '#EF4444' : 'transparent'} />
                 </button>
                 <span style={{ fontSize: '13px' }}>{likedPosts[post.id] ? 1 : 0}</span>
               </div>
-
             </div>
           ))
         )}
@@ -391,6 +389,7 @@ function PaymentPage({ activity, currentUser, onBack, onSuccess }) {
 function HostPage({ currentUser, defaultSport, setView }) {
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
   const [sport, setSport] = useState(defaultSport || '');
   const [venue, setVenue] = useState('');
   const [customVenue, setCustomVenue] = useState('');
@@ -412,7 +411,11 @@ function HostPage({ currentUser, defaultSport, setView }) {
   const handlePostActivity = async () => {
     setIsSubmitting(true);
     const { data: activityData, error: activityError } = await supabase.from('activities').insert({ host_id: currentUser.id, sport, venue: finalVenue, date, start_time: startTime, end_time: endTime, total_players: parseInt(totalPlayers), confirmed_players: parseInt(confirmedPlayers), difficulty, fee: parseFloat(fee), description }).select().single();
-    if (!activityError && activityData) { await supabase.from('chats').insert({ activity_id: activityData.id }); setStep(3); }
+    if (!activityError && activityData) { 
+      await supabase.from('chats').insert({ activity_id: activityData.id }); 
+      setStep(3); 
+      setShowShareModal(true);
+    }
     setIsSubmitting(false);
   };
 
@@ -423,6 +426,7 @@ function HostPage({ currentUser, defaultSport, setView }) {
       <p style={{ fontSize: '16px', color: '#64748B', marginBottom: '40px' }}>Waiting for {parseInt(totalPlayers) - parseInt(confirmedPlayers)} more players...</p>
       <button onClick={() => setView('events')} className="btn-primary" style={{ marginBottom: '12px' }}>View My Events</button>
       <button onClick={() => setView('home')} className="btn-primary" style={{ backgroundColor: 'transparent', border: '1.5px solid #3B82F6', color: '#3B82F6', boxShadow: 'none' }}>Back to Home</button>
+      <ShareModal isOpen={showShareModal} actionText="hosted a new session" onShare={() => setShowShareModal(false)} onDismiss={() => setShowShareModal(false)} />
     </div>
   );
 
@@ -515,6 +519,7 @@ export default function Home() {
   const [hostDefaultSport, setHostDefaultSport] = useState('');
   const [selectedActivity, setSelectedActivity] = useState(null);
   const [subView, setSubView] = useState('list');
+  const [showShareModal, setShowShareModal] = useState(false);
   
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -599,13 +604,14 @@ export default function Home() {
               {subView === 'list' && <ExplorePage onSelectActivity={(act) => { setSelectedActivity(act); setSubView('detail'); }} />}
               {subView === 'detail' && selectedActivity && <ActivityDetailPage activity={selectedActivity} onBack={() => setSubView('list')} onProceedToPlayers={() => setSubView('players')} />}
               {subView === 'players' && selectedActivity && <PlayersPage activity={selectedActivity} onBack={() => setSubView('detail')} onProceedToPayment={() => setSubView('payment')} />}
-              {subView === 'payment' && selectedActivity && <PaymentPage activity={selectedActivity} currentUser={currentUser} onBack={() => setSubView('players')} onSuccess={() => setSubView('booking_success')} />}
+              {subView === 'payment' && selectedActivity && <PaymentPage activity={selectedActivity} currentUser={currentUser} onBack={() => setSubView('players')} onSuccess={() => { setSubView('booking_success'); setShowShareModal(true); }} />}
               {subView === 'booking_success' && (
                 <div className="page-transition" style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '20px', textAlign: 'center', minHeight: '100vh' }}>
                   <CheckCircle2 size={64} color="#10B981" style={{ marginBottom: '24px' }} />
                   <h1 style={{ fontSize: '32px', fontWeight: 800, marginBottom: '8px' }}>You&apos;re In! 🎉</h1>
                   <p style={{ fontSize: '15px', color: '#64748B', marginBottom: '32px' }}>Your spot is locked in. Get ready to play!</p>
                   <button onClick={() => { setSubView('list'); setView('events'); }} className="btn-primary">View in Events</button>
+                  <ShareModal isOpen={showShareModal} actionText="joined a session" onShare={() => setShowShareModal(false)} onDismiss={() => setShowShareModal(false)} />
                 </div>
               )}
             </>
