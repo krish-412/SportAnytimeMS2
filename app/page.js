@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../utils/supabase';
 import { 
-  Zap, Eye, EyeOff, ChevronLeft, User, Camera, Check, Sun, Moon, 
+  Zap, Bell, Eye, EyeOff, ChevronLeft, User, Camera, Check, Sun, Moon, 
   MapPin, Clock, Plus, Search, Globe, Calendar as CalendarIcon, Settings 
 } from 'lucide-react';
 
