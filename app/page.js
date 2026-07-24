@@ -5,7 +5,7 @@ import { supabase } from '../utils/supabase';
 import { 
   Zap, Bell, Eye, EyeOff, ChevronLeft, User, Camera, Check, Sun, Moon, 
   MapPin, Clock, Plus, Search, Globe, Calendar as CalendarIcon, Settings,
-  CheckCircle, Users, BarChart2, CreditCard, AlignLeft
+  CheckCircle, CheckCircle2, Users, BarChart2, CreditCard, AlignLeft, SearchX, Smartphone
 } from 'lucide-react';
 
 // --- SUB-COMPONENTS ---
@@ -71,11 +71,337 @@ const GLOBAL_SPORTS = [
   'Yoga', 'Running', 'Billiards', 'Hockey', 'Gymnastics', 'Other'
 ];
 
+const SPORT_COLORS = {
+  'Football': '#16213e', 'Basketball': '#f97316', 'Badminton': '#10b981',
+  'Tennis': '#f59e0b', 'Volleyball': '#8b5cf6', 'Swimming': '#06b6d4',
+  'Table Tennis': '#ec4899', 'Running': '#f43f5e', 'Other': '#3B82F6'
+};
+
+const SPORT_EMOJIS = {
+  'Football': '⚽', 'Basketball': '🏀', 'Badminton': '🏸', 'Tennis': '🎾',
+  'Volleyball': '🏐', 'Swimming': '🏊', 'Table Tennis': '🏓', 'Boxing': '🥊',
+  'Gym / Weightlifting': '🏋️', 'Yoga': '🧘', 'Running': '🏃', 'Billiards': '🎱',
+  'Hockey': '🏒', 'Gymnastics': '🤸', 'Other': '➕'
+};
+
+const SPORT_GRADIENTS = {
+  'Football': 'linear-gradient(135deg, #1a1a2e, #16213e)',
+  'Basketball': 'linear-gradient(135deg, #f97316, #ea580c)',
+  'Badminton': 'linear-gradient(135deg, #10b981, #059669)',
+  'Tennis': 'linear-gradient(135deg, #f59e0b, #d97706)',
+  'Volleyball': 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
+  'Swimming': 'linear-gradient(135deg, #06b6d4, #0891b2)',
+  'Table Tennis': 'linear-gradient(135deg, #ec4899, #db2777)',
+  'Running': 'linear-gradient(135deg, #f43f5e, #e11d48)',
+  'Other': 'linear-gradient(135deg, #475569, #334155)'
+};
+
+// --- EXPLORE & BOOKING FLOW ---
+
+function ExplorePage({ onSelectActivity }) {
+  const [activities, setActivities] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [sportFilter, setSportFilter] = useState('All Sports');
+
+  useEffect(() => {
+    fetchActivities();
+  }, [selectedDate, sportFilter]);
+
+  const fetchActivities = async () => {
+    setLoading(true);
+    let query = supabase.from('activities').select('*').order('start_time', { ascending: true });
+    
+    if (selectedDate) {
+      query = query.eq('date', selectedDate);
+    }
+    if (sportFilter !== 'All Sports') {
+      query = query.eq('sport', sportFilter);
+    }
+
+    const { data } = await query;
+    setActivities(data || []);
+    setLoading(false);
+  };
+
+  // Generate 14-day slider
+  const days = Array.from({ length: 14 }, (_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() + i);
+    const iso = d.toISOString().split('T')[0];
+    const dayStr = d.toLocaleDateString('en-US', { weekday: 'short' });
+    const numStr = d.getDate();
+    return { iso, dayStr, numStr };
+  });
+
+  return (
+    <div className="page-transition" style={{ paddingBottom: '80px' }}>
+      {/* Sticky Header */}
+      <div style={{ position: 'sticky', top: 0, backgroundColor: 'var(--bg-page)', borderBottom: 'var(--border)', padding: '16px 20px', zIndex: 40, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <h1 style={{ fontSize: '20px', fontWeight: 800 }}>Explore</h1>
+      </div>
+
+      {/* Date Slider */}
+      <div style={{ position: 'sticky', top: '57px', backgroundColor: 'var(--bg-page)', zIndex: 39, borderBottom: 'var(--border)', padding: '12px 0' }}>
+        <HStack style={{ padding: '0 20px', gap: '8px' }}>
+          {days.map((d) => {
+            const isSel = selectedDate === d.iso;
+            return (
+              <button
+                key={d.iso}
+                onClick={() => setSelectedDate(d.iso)}
+                style={{
+                  minWidth: '52px', height: '64px', borderRadius: '16px', border: isSel ? 'none' : 'var(--border)',
+                  backgroundColor: isSel ? '#3B82F6' : 'transparent', color: isSel ? '#ffffff' : 'var(--text-primary)',
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer'
+                }}
+              >
+                <span style={{ fontSize: '11px', fontWeight: 500, color: isSel ? '#ffffff' : '#94A3B8' }}>{d.dayStr}</span>
+                <span style={{ fontSize: '18px', fontWeight: 700, marginTop: '2px' }}>{d.numStr}</span>
+              </button>
+            );
+          })}
+        </HStack>
+      </div>
+
+      {/* Filter Bar */}
+      <div style={{ padding: '12px 0', borderBottom: 'var(--border)' }}>
+        <HStack style={{ padding: '0 20px', gap: '8px' }}>
+          <select 
+            value={sportFilter} 
+            onChange={(e) => setSportFilter(e.target.value)}
+            style={{
+              height: '34px', borderRadius: '999px', padding: '0 14px', fontSize: '13px', fontWeight: 500,
+              backgroundColor: sportFilter !== 'All Sports' ? '#3B82F6' : 'var(--card-surface)',
+              color: sportFilter !== 'All Sports' ? '#ffffff' : '#94A3B8', border: 'var(--border)', outline: 'none'
+            }}
+          >
+            <option value="All Sports">All Sports</option>
+            {GLOBAL_SPORTS.map(s => <option key={s} value={s}>{s}</option>)}
+          </select>
+        </HStack>
+      </div>
+
+      {/* Activity List */}
+      <div style={{ padding: '20px' }}>
+        {loading ? (
+          <p style={{ textAlign: 'center', color: '#64748B', paddingTop: '40px' }}>Loading activities...</p>
+        ) : activities.length === 0 ? (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', paddingTop: '60px', textAlign: 'center' }}>
+            <SearchX size={48} color="#334155" style={{ marginBottom: '16px' }} />
+            <h3 style={{ fontSize: '16px', fontWeight: 600, color: '#64748B', marginBottom: '4px' }}>No activities on this day</h3>
+            <p style={{ fontSize: '13px', color: '#94A3B8' }}>Try a different date or adjust your filters</p>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {activities.map((act) => {
+              const slotsLeft = act.total_players - act.confirmed_players;
+              const color = SPORT_COLORS[act.sport] || '#3B82F6';
+              const emoji = SPORT_EMOJIS[act.sport] || '🏅';
+
+              return (
+                <div
+                  key={act.id}
+                  onClick={() => onSelectActivity(act)}
+                  style={{
+                    borderRadius: '16px', backgroundColor: 'var(--card-surface)', boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+                    border: 'var(--border)', borderLeft: `4px solid ${color}`, padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px', cursor: 'pointer'
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ fontSize: '20px' }}>{emoji}</span>
+                      <span style={{ fontSize: '15px', fontWeight: 700 }}>{act.sport}</span>
+                    </div>
+                    <div style={{
+                      backgroundColor: slotsLeft <= 2 ? '#FEF2F2' : slotsLeft <= 5 ? '#FFFBEB' : '#F0FDF4',
+                      color: slotsLeft <= 2 ? '#EF4444' : slotsLeft <= 5 ? '#F59E0B' : '#10B981',
+                      borderRadius: '999px', padding: '4px 10px', fontSize: '11px', fontWeight: 600
+                    }}>
+                      {slotsLeft} slots left
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748B' }}>
+                    <MapPin size={14} />
+                    <span style={{ fontSize: '14px' }}>{act.venue}</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748B' }}>
+                    <Clock size={14} />
+                    <span style={{ fontSize: '14px' }}>{act.date} · {act.start_time} - {act.end_time}</span>
+                  </div>
+                  <div style={{ display: 'flex', gap: '12px', marginTop: '4px', alignItems: 'center' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 600, padding: '3px 10px', borderRadius: '999px', backgroundColor: '#EFF6FF', color: '#3B82F6', textTransform: 'uppercase' }}>
+                      {act.difficulty}
+                    </span>
+                    <span style={{ fontSize: '13px', fontWeight: 600 }}>
+                      SGD {parseFloat(act.fee).toFixed(2)} / person
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ActivityDetailPage({ activity, onBack, onProceedToBooking }) {
+  const emoji = SPORT_EMOJIS[activity.sport] || '🏅';
+  const grad = SPORT_GRADIENTS[activity.sport] || 'linear-gradient(135deg, #3B82F6, #1E3A5F)';
+  const slotsLeft = activity.total_players - activity.confirmed_players;
+  const isFull = slotsLeft <= 0;
+
+  return (
+    <div className="page-transition" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', paddingBottom: '90px' }}>
+      {/* Hero Section */}
+      <div style={{ height: '200px', background: grad, position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
+        <button onClick={onBack} style={{ position: 'absolute', top: 16, left: 16, background: 'rgba(0,0,0,0.3)', border: 'none', borderRadius: '50%', width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', cursor: 'pointer' }}>
+          <ChevronLeft size={24} />
+        </button>
+        <span style={{ fontSize: '48px', marginBottom: '8px' }}>{emoji}</span>
+        <h1 style={{ fontSize: '22px', fontWeight: 800 }}>{activity.sport}</h1>
+      </div>
+
+      <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <MapPin size={20} color="#3B82F6" />
+          <span style={{ fontSize: '16px', fontWeight: 600 }}>{activity.venue}</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <Clock size={20} color="#3B82F6" />
+          <span style={{ fontSize: '15px', color: '#64748B' }}>{activity.date} · {activity.start_time} - {activity.end_time}</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <CreditCard size={20} color="#3B82F6" />
+          <span style={{ fontSize: '15px', fontWeight: 600 }}>SGD {parseFloat(activity.fee).toFixed(2)} per person</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <BarChart2 size={20} color="#3B82F6" />
+          <span style={{ fontSize: '11px', fontWeight: 600, padding: '3px 10px', borderRadius: '999px', backgroundColor: '#EFF6FF', color: '#3B82F6', textTransform: 'uppercase' }}>
+            {activity.difficulty}
+          </span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <Users size={20} color="#3B82F6" />
+          <span style={{ fontSize: '15px', color: '#64748B' }}>{activity.confirmed_players} / {activity.total_players} players confirmed</span>
+        </div>
+
+        {/* Slot Progress Bar */}
+        <div style={{ width: '100%', height: '8px', backgroundColor: '#334155', borderRadius: '999px', overflow: 'hidden' }}>
+          <div style={{ height: '100%', width: `${(activity.confirmed_players / activity.total_players) * 100}%`, backgroundColor: isFull ? '#EF4444' : '#3B82F6', transition: 'all 200ms ease' }} />
+        </div>
+
+        {activity.description && (
+          <div style={{ backgroundColor: 'var(--card-surface)', padding: '16px', borderRadius: '16px', border: 'var(--border)', marginTop: '8px' }}>
+            <p style={{ fontSize: '14px', color: '#64748B', lineHeight: 1.5 }}>{activity.description}</p>
+          </div>
+        )}
+      </div>
+
+      {/* Sticky Bottom Action */}
+      <div style={{ position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: '430px', padding: '16px 20px', backgroundColor: 'var(--card-surface)', borderTop: 'var(--border)', zIndex: 50 }}>
+        <button 
+          onClick={onProceedToBooking}
+          className="btn-primary" 
+          style={{ backgroundColor: isFull ? '#F59E0B' : '#3B82F6' }}
+        >
+          {isFull ? 'Join Waitlist' : "See Who's Playing →"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function PaymentPage({ activity, currentUser, onBack, onSuccess }) {
+  const [method, setMethod] = useState('card');
+  const [loading, setLoading] = useState(false);
+
+  const handlePay = async () => {
+    setLoading(true);
+    // Insert Booking Record
+    const { error } = await supabase.from('bookings').insert({
+      activity_id: activity.id,
+      user_id: currentUser.id
+    });
+
+    if (!error) {
+      // Increment confirmed_players in activities table
+      await supabase.from('activities').update({
+        confirmed_players: activity.confirmed_players + 1
+      }).eq('id', activity.id);
+
+      onSuccess();
+    } else {
+      alert('Booking failed or you already joined this activity.');
+    }
+    setLoading(false);
+  };
+
+  return (
+    <div className="page-transition" style={{ minHeight: '100vh', padding: '20px', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ display: 'flex', alignItems: 'center', marginBottom: '24px' }}>
+        <button onClick={onBack} style={{ background: 'none', border: 'none', color: '#64748B', cursor: 'pointer', padding: 0 }}>
+          <ChevronLeft size={24} />
+        </button>
+        <h1 style={{ flex: 1, textAlign: 'center', fontSize: '18px', fontWeight: 700, marginRight: '24px' }}>Complete Booking</h1>
+      </div>
+
+      {/* Summary Card */}
+      <div style={{ backgroundColor: 'var(--card-surface)', borderRadius: '16px', padding: '16px', border: 'var(--border)', marginBottom: '24px' }}>
+        <div style={{ fontSize: '16px', fontWeight: 700, marginBottom: '4px' }}>{activity.sport} @ {activity.venue}</div>
+        <div style={{ fontSize: '14px', color: '#64748B' }}>{activity.date} · {activity.start_time}</div>
+        <div style={{ fontSize: '16px', fontWeight: 800, color: '#3B82F6', marginTop: '12px' }}>SGD {parseFloat(activity.fee).toFixed(2)}</div>
+      </div>
+
+      <h2 style={{ fontSize: '16px', fontWeight: 700, marginBottom: '16px' }}>Choose Payment Method</h2>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '24px' }}>
+        {[
+          { id: 'apple', label: 'Apple Pay', Icon: Smartphone, color: '#F1F5F9' },
+          { id: 'paylah', label: 'PayLah!', Icon: Smartphone, color: '#EF4444' },
+          { id: 'card', label: 'Credit / Debit Card', Icon: CreditCard, color: '#3B82F6' }
+        ].map((m) => (
+          <div
+            key={m.id}
+            onClick={() => setMethod(m.id)}
+            style={{
+              borderRadius: '16px', padding: '16px', border: method === m.id ? '1.5px solid #3B82F6' : 'var(--border)',
+              backgroundColor: method === m.id ? 'rgba(59,130,246,0.06)' : 'var(--card-surface)',
+              display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer'
+            }}
+          >
+            <m.Icon size={20} color={m.color} />
+            <span style={{ fontSize: '15px', fontWeight: 600, flex: 1 }}>{m.label}</span>
+            <div style={{ width: 18, height: 18, borderRadius: '50%', border: '2px solid #3B82F6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              {method === m.id && <div style={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: '#3B82F6' }} />}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {method === 'card' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '24px' }}>
+          <input className="input-field" placeholder="1234 5678 9012 3456" defaultValue="4242 •••• •••• 4242" />
+          <div style={{ display: 'flex', gap: '12px' }}>
+            <input className="input-field" placeholder="MM/YY" defaultValue="12/28" />
+            <input className="input-field" placeholder="CVV" defaultValue="123" />
+          </div>
+        </div>
+      )}
+
+      <button onClick={handlePay} disabled={loading} className="btn-primary" style={{ marginTop: 'auto' }}>
+        {loading ? 'Processing...' : `Pay SGD ${parseFloat(activity.fee).toFixed(2)}`}
+      </button>
+    </div>
+  );
+}
+
 function HostPage({ currentUser, defaultSport, setView }) {
-  const [step, setStep] = useState(1); // 1: Details, 2: Review, 3: Success
+  const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Form State
   const [sport, setSport] = useState(defaultSport || '');
   const [venue, setVenue] = useState('');
   const [customVenue, setCustomVenue] = useState('');
@@ -90,7 +416,6 @@ function HostPage({ currentUser, defaultSport, setView }) {
 
   const today = new Date().toISOString().split('T')[0];
 
-  // Validation
   const isTimeValid = startTime && endTime && endTime > startTime;
   const isPlayersValid = parseInt(confirmedPlayers) >= 0 && parseInt(confirmedPlayers) < parseInt(totalPlayers);
   const isFormComplete = sport && venue && (venue !== 'Other (type below)' || customVenue) && 
@@ -116,7 +441,7 @@ function HostPage({ currentUser, defaultSport, setView }) {
 
     if (!activityError && activityData) {
       await supabase.from('chats').insert({ activity_id: activityData.id });
-      setStep(3); // Success
+      setStep(3);
     }
     setIsSubmitting(false);
   };
@@ -141,7 +466,6 @@ function HostPage({ currentUser, defaultSport, setView }) {
 
   return (
     <div className="page-transition" style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', paddingBottom: '40px' }}>
-      {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', padding: '16px 20px', borderBottom: 'var(--border)' }}>
         <button onClick={() => setView('home')} style={{ background: 'none', border: 'none', color: '#64748B', cursor: 'pointer', padding: 0 }}>
           <ChevronLeft size={24} />
@@ -149,7 +473,6 @@ function HostPage({ currentUser, defaultSport, setView }) {
         <h1 style={{ flex: 1, textAlign: 'center', fontSize: '18px', fontWeight: 700, marginRight: '24px' }}>Host an Activity</h1>
       </div>
 
-      {/* Step Indicator */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px 20px' }}>
         <div style={{ width: 24, height: 24, borderRadius: '50%', backgroundColor: '#3B82F6', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 700 }}>
           {step === 2 ? <Check size={14} /> : 1}
@@ -169,7 +492,7 @@ function HostPage({ currentUser, defaultSport, setView }) {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div>
               <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#64748B', marginBottom: '6px' }}>SPORT</label>
-              <select className="input-field" value={sport} onChange={(e) => setSport(e.target.value)} style={{ appearance: 'none' }}>
+              <select className="input-field" value={sport} onChange={(e) => setSport(e.target.value)}>
                 <option value="" disabled>Select a sport</option>
                 {GLOBAL_SPORTS.map(s => <option key={s} value={s}>{s}</option>)}
               </select>
@@ -177,14 +500,14 @@ function HostPage({ currentUser, defaultSport, setView }) {
 
             <div>
               <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#64748B', marginBottom: '6px' }}>VENUE</label>
-              <select className="input-field" value={venue} onChange={(e) => setVenue(e.target.value)} style={{ appearance: 'none', marginBottom: venue === 'Other (type below)' ? '8px' : '0' }}>
+              <select className="input-field" value={venue} onChange={(e) => setVenue(e.target.value)}>
                 <option value="" disabled>Select a venue</option>
                 {["UTown Sports Hall", "MPSH 1", "MPSH 2", "MPSH 3", "MPSH 4", "MPSH 5", "MPSH 6", "The Deck", "University Cultural Centre", "Kent Ridge Paddock", "Other (type below)"].map(v => (
                   <option key={v} value={v}>{v}</option>
                 ))}
               </select>
               {venue === 'Other (type below)' && (
-                <input type="text" className="input-field" placeholder="Enter custom venue name" value={customVenue} onChange={(e) => setCustomVenue(e.target.value)} />
+                <input type="text" className="input-field" placeholder="Enter custom venue name" value={customVenue} onChange={(e) => setCustomVenue(e.target.value)} style={{ marginTop: '8px' }} />
               )}
             </div>
 
@@ -201,7 +524,6 @@ function HostPage({ currentUser, defaultSport, setView }) {
               <div style={{ flex: 1 }}>
                 <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#64748B', marginBottom: '6px' }}>END TIME</label>
                 <input type="time" className="input-field" value={endTime} onChange={(e) => setEndTime(e.target.value)} />
-                {endTime && startTime && endTime <= startTime && <p style={{ fontSize: '11px', color: '#EF4444', marginTop: '4px' }}>Must be after start</p>}
               </div>
             </div>
 
@@ -213,7 +535,6 @@ function HostPage({ currentUser, defaultSport, setView }) {
               <div style={{ flex: 1 }}>
                 <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#64748B', marginBottom: '6px' }}>CONFIRMED</label>
                 <input type="number" min="0" placeholder="e.g. 4" className="input-field" value={confirmedPlayers} onChange={(e) => setConfirmedPlayers(e.target.value)} />
-                {confirmedPlayers && totalPlayers && !isPlayersValid && <p style={{ fontSize: '11px', color: '#EF4444', marginTop: '4px' }}>Too many</p>}
               </div>
             </div>
 
@@ -222,7 +543,7 @@ function HostPage({ currentUser, defaultSport, setView }) {
               <div style={{ display: 'flex', gap: '4px', height: '40px' }}>
                 {['Beginner', 'Intermediate', 'Advanced', 'Professional'].map((level) => (
                   <button key={level} onClick={() => setDifficulty(level)} style={{
-                    flex: 1, borderRadius: '999px', fontSize: '10px', fontWeight: 600, cursor: 'pointer', transition: 'all 150ms ease',
+                    flex: 1, borderRadius: '999px', fontSize: '10px', fontWeight: 600, cursor: 'pointer',
                     border: difficulty === level ? 'none' : '1px solid #334155',
                     backgroundColor: difficulty === level ? '#3B82F6' : 'transparent',
                     color: difficulty === level ? '#ffffff' : '#64748B'
@@ -246,12 +567,9 @@ function HostPage({ currentUser, defaultSport, setView }) {
                 maxLength={300}
                 style={{ height: 'auto', padding: '16px', resize: 'none' }} 
                 rows={4} 
-                placeholder="Add any extra details — what to bring, parking info, skill expectations..."
+                placeholder="Add any extra details..."
                 value={description} onChange={(e) => setDescription(e.target.value)}
               />
-              <div style={{ textAlign: 'right', fontSize: '11px', color: '#64748B', marginTop: '4px' }}>
-                {description.length}/300
-              </div>
             </div>
 
             <button onClick={() => setStep(2)} disabled={!isFormComplete} className="btn-primary" style={{ marginTop: '16px' }}>
@@ -264,46 +582,28 @@ function HostPage({ currentUser, defaultSport, setView }) {
           <div className="page-transition">
             <div style={{ backgroundColor: 'var(--card-surface)', borderRadius: '16px', padding: '16px', border: 'var(--border)', display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: '#64748B' }}><Zap size={18} color="#3B82F6" /> <span style={{ fontSize: '14px' }}>Sport</span></div>
+                <span style={{ fontSize: '14px', color: '#64748B' }}>Sport</span>
                 <span style={{ fontSize: '15px', fontWeight: 700 }}>{sport}</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: '#64748B' }}><MapPin size={18} color="#3B82F6" /> <span style={{ fontSize: '14px' }}>Venue</span></div>
+                <span style={{ fontSize: '14px', color: '#64748B' }}>Venue</span>
                 <span style={{ fontSize: '15px', fontWeight: 600 }}>{finalVenue}</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: '#64748B' }}><Clock size={18} color="#3B82F6" /> <span style={{ fontSize: '14px' }}>Date</span></div>
+                <span style={{ fontSize: '14px', color: '#64748B' }}>Date</span>
                 <span style={{ fontSize: '15px', fontWeight: 600 }}>{date}</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: '#64748B' }}><Clock size={18} color="#3B82F6" /> <span style={{ fontSize: '14px' }}>Time</span></div>
+                <span style={{ fontSize: '14px', color: '#64748B' }}>Time</span>
                 <span style={{ fontSize: '15px', fontWeight: 600 }}>{startTime} - {endTime}</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: '#64748B' }}><Users size={18} color="#3B82F6" /> <span style={{ fontSize: '14px' }}>Available Spots</span></div>
-                <span style={{ fontSize: '15px', fontWeight: 700, color: '#10B981' }}>{parseInt(totalPlayers) - parseInt(confirmedPlayers)} slots</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: '#64748B' }}><BarChart2 size={18} color="#3B82F6" /> <span style={{ fontSize: '14px' }}>Difficulty</span></div>
-                <span style={{ fontSize: '14px', fontWeight: 600 }}>{difficulty}</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: '#64748B' }}><CreditCard size={18} color="#3B82F6" /> <span style={{ fontSize: '14px' }}>Fee Per Person</span></div>
+                <span style={{ fontSize: '14px', color: '#64748B' }}>Fee</span>
                 <span style={{ fontSize: '15px', fontWeight: 600 }}>SGD {parseFloat(fee).toFixed(2)}</span>
               </div>
-              {description && (
-                <div style={{ borderTop: 'var(--border)', paddingTop: '16px', marginTop: '4px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: '#64748B', marginBottom: '8px' }}><AlignLeft size={18} color="#3B82F6" /> <span style={{ fontSize: '14px' }}>Notes</span></div>
-                  <p style={{ fontSize: '14px', color: 'var(--text-primary)', lineHeight: 1.5 }}>{description}</p>
-                </div>
-              )}
             </div>
 
-            <p style={{ fontSize: '12px', color: '#64748B', textAlign: 'center', margin: '24px 0' }}>
-              A small platform fee will be added at checkout for players who join.
-            </p>
-
-            <button onClick={handlePostActivity} disabled={isSubmitting} className="btn-primary" style={{ marginBottom: '12px' }}>
+            <button onClick={handlePostActivity} disabled={isSubmitting} className="btn-primary" style={{ marginTop: '24px', marginBottom: '12px' }}>
               {isSubmitting ? 'Posting...' : 'Post Activity'}
             </button>
             <button onClick={() => setStep(1)} disabled={isSubmitting} className="btn-primary" style={{ backgroundColor: 'transparent', border: '1.5px solid #3B82F6', color: '#3B82F6', boxShadow: 'none' }}>
@@ -318,52 +618,16 @@ function HostPage({ currentUser, defaultSport, setView }) {
 
 function HomePage({ currentUser, displayName, theme, setTheme, setView, setHostDefaultSport }) {
   const userFirstName = displayName || currentUser?.user_metadata?.full_name || 'Athlete';
-  
-  const SPORTS = [
-    { name: 'Football', emoji: '⚽', grad: 'linear-gradient(135deg, #1a1a2e, #16213e)' },
-    { name: 'Basketball', emoji: '🏀', grad: 'linear-gradient(135deg, #f97316, #ea580c)' },
-    { name: 'Badminton', emoji: '🏸', grad: 'linear-gradient(135deg, #10b981, #059669)' },
-    { name: 'Tennis', emoji: '🎾', grad: 'linear-gradient(135deg, #f59e0b, #d97706)' },
-    { name: 'Volleyball', emoji: '🏐', grad: 'linear-gradient(135deg, #8b5cf6, #7c3aed)' },
-    { name: 'Swimming', emoji: '🏊', grad: 'linear-gradient(135deg, #06b6d4, #0891b2)' },
-    { name: 'Table Tennis', emoji: '🏓', grad: 'linear-gradient(135deg, #ec4899, #db2777)' },
-    { name: 'Running', emoji: '🏃', grad: 'linear-gradient(135deg, #f43f5e, #e11d48)' },
-    { name: 'Other', emoji: '➕', grad: 'linear-gradient(135deg, #475569, #334155)' },
-  ];
-
-  const MOCK_ACTIVITIES = [
-    { id: 1, sport: 'Badminton', emoji: '🏸', color: '#10b981', venue: 'MPSH 1', date: 'Sat, 12 Jul', time: '6:00 PM – 8:00 PM', diff: 'Intermediate', price: '5.00', slots: 2 },
-    { id: 2, sport: 'Running', emoji: '🏃', color: '#e11d48', venue: 'University Cultural Centre', date: 'Sun, 13 Jul', time: '7:00 AM – 8:30 AM', diff: 'Beginner', price: '0.00', slots: 10 },
-    { id: 3, sport: 'Football', emoji: '⚽', color: '#16213e', venue: 'Kent Ridge Paddock', date: 'Mon, 14 Jul', time: '8:00 PM – 10:00 PM', diff: 'Advanced', price: '8.50', slots: 4 },
-  ];
-
-  const getSlotBadge = (n) => {
-    if (n <= 2) return { bg: '#FEF2F2', color: '#EF4444' };
-    if (n <= 5) return { bg: '#FFFBEB', color: '#F59E0B' };
-    return { bg: '#F0FDF4', color: '#10B981' };
-  };
-
-  const getDiffBadge = (diff) => {
-    if (diff === 'Beginner') return { bg: '#F0FDF4', color: '#10B981' };
-    if (diff === 'Intermediate') return { bg: '#EFF6FF', color: '#3B82F6' };
-    if (diff === 'Advanced') return { bg: '#FFFBEB', color: '#F59E0B' };
-    return { bg: '#FEF2F2', color: '#EF4444' };
-  };
 
   return (
     <div className="page-transition" style={{ paddingBottom: '80px', display: 'flex', flexDirection: 'column' }}>
-      <div style={{
-        position: 'sticky', top: 0, backgroundColor: 'var(--bg-page)', borderBottom: 'var(--border)',
-        padding: '16px 20px', zIndex: 40, display: 'flex', justifyContent: 'space-between', alignItems: 'center'
-      }}>
+      <div style={{ position: 'sticky', top: 0, backgroundColor: 'var(--bg-page)', borderBottom: 'var(--border)', padding: '16px 20px', zIndex: 40, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <Zap size={20} color="#3B82F6" fill="#3B82F6" />
             <span style={{ fontSize: '20px', fontWeight: 800 }}>SportAnytime</span>
           </div>
-          <p style={{ fontSize: '16px', fontWeight: 600, marginTop: '4px', color: 'var(--text-primary)' }}>
-            Hey {userFirstName} 👋
-          </p>
+          <p style={{ fontSize: '16px', fontWeight: 600, marginTop: '4px' }}>Hey {userFirstName} 👋</p>
         </div>
         <div style={{ display: 'flex', gap: '16px' }}>
           <Bell size={22} color="#64748B" />
@@ -373,20 +637,18 @@ function HomePage({ currentUser, displayName, theme, setTheme, setView, setHostD
         </div>
       </div>
 
-      <div style={{ padding: '24px 20px 24px 20px', borderBottom: 'var(--border)' }}>
+      <div style={{ padding: '24px 20px', borderBottom: 'var(--border)' }}>
         <h2 style={{ fontSize: '20px', fontWeight: 700 }}>Hosting a Sport?</h2>
-        <p style={{ fontSize: '13px', color: '#64748B', marginTop: '4px', marginBottom: '16px' }}>
-          You&apos;ve got the venue — find your players.
-        </p>
+        <p style={{ fontSize: '13px', color: '#64748B', marginTop: '4px', marginBottom: '16px' }}>You&apos;ve got the venue — find your players.</p>
         
         <HStack style={{ margin: '0 -20px', padding: '0 20px', gap: '10px' }}>
-          {SPORTS.map(sport => (
-            <div key={sport.name} onClick={() => { setHostDefaultSport(sport.name); setView('host'); }} style={{
-              minWidth: '100px', height: '110px', borderRadius: '16px', background: sport.grad,
+          {GLOBAL_SPORTS.slice(0, 8).map(s => (
+            <div key={s} onClick={() => { setHostDefaultSport(s); setView('host'); }} style={{
+              minWidth: '100px', height: '110px', borderRadius: '16px', background: SPORT_GRADIENTS[s] || 'linear-gradient(135deg, #3B82F6, #1E3A5F)',
               display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer'
             }}>
-              <span style={{ fontSize: '28px', marginBottom: '8px' }}>{sport.emoji}</span>
-              <span style={{ fontSize: '12px', fontWeight: 600, color: '#ffffff' }}>{sport.name}</span>
+              <span style={{ fontSize: '28px', marginBottom: '8px' }}>{SPORT_EMOJIS[s]}</span>
+              <span style={{ fontSize: '12px', fontWeight: 600, color: '#ffffff' }}>{s}</span>
             </div>
           ))}
         </HStack>
@@ -397,56 +659,13 @@ function HomePage({ currentUser, displayName, theme, setTheme, setView, setHostD
       </div>
 
       <div style={{ padding: '24px 20px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
-          <div>
-            <h2 style={{ fontSize: '20px', fontWeight: 700 }}>Find a Game</h2>
-            <p style={{ fontSize: '13px', color: '#64748B', marginTop: '4px' }}>Jump into a game near you.</p>
-          </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+          <h2 style={{ fontSize: '20px', fontWeight: 700 }}>Find a Game</h2>
           <button onClick={() => setView('explore')} style={{ background: 'none', border: 'none', color: '#3B82F6', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}>
             See All →
           </button>
         </div>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          {MOCK_ACTIVITIES.map(act => {
-            const slots = getSlotBadge(act.slots);
-            const diff = getDiffBadge(act.diff);
-            return (
-              <div key={act.id} onClick={() => setView('explore')} style={{
-                borderRadius: '16px', backgroundColor: 'var(--card-surface)',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.08)',
-                border: 'var(--border)', borderLeft: `4px solid ${act.color}`,
-                padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px', cursor: 'pointer'
-              }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span style={{ fontSize: '20px' }}>{act.emoji}</span>
-                    <span style={{ fontSize: '15px', fontWeight: 700 }}>{act.sport}</span>
-                  </div>
-                  <div style={{ background: slots.bg, color: slots.color, borderRadius: '999px', padding: '4px 10px', fontSize: '11px', fontWeight: 600 }}>
-                    {act.slots} slots left
-                  </div>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748B' }}>
-                  <MapPin size={14} />
-                  <span style={{ fontSize: '14px' }}>{act.venue}</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748B' }}>
-                  <Clock size={14} />
-                  <span style={{ fontSize: '14px' }}>{act.date} · {act.time}</span>
-                </div>
-                <div style={{ display: 'flex', gap: '12px', marginTop: '4px' }}>
-                  <div style={{ background: diff.bg, color: diff.color, borderRadius: '999px', padding: '3px 10px', fontSize: '11px', fontWeight: 600, textTransform: 'uppercase' }}>
-                    {act.diff}
-                  </div>
-                  <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
-                    SGD {act.price} / person
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        <p style={{ fontSize: '13px', color: '#64748B' }}>Tap &quot;See All →&quot; or use the Explore tab below to browse all live activities.</p>
       </div>
     </div>
   );
@@ -457,6 +676,8 @@ export default function Home() {
   const [view, setView] = useState('auth'); 
   const [authTab, setAuthTab] = useState('login'); 
   const [hostDefaultSport, setHostDefaultSport] = useState('');
+  const [selectedActivity, setSelectedActivity] = useState(null);
+  const [subView, setSubView] = useState('list'); // 'list' | 'detail' | 'payment' | 'booking_success'
   
   // Auth Form State
   const [fullName, setFullName] = useState('');
@@ -484,59 +705,23 @@ export default function Home() {
 
   const handleEmailChange = (val) => {
     setEmail(val);
-    if (val.length > 0 && !val.toLowerCase().endsWith('@u.nus.edu')) {
-      setEmailDomainError(true);
-    } else {
-      setEmailDomainError(false);
-    }
-  };
-
-  const getPasswordStrength = () => {
-    if (!password) return { score: 0, color: 'transparent', label: '' };
-    if (password.length < 6) return { score: 33, color: '#EF4444', label: 'Weak' };
-    if (password.length < 10) return { score: 66, color: '#F59E0B', label: 'Medium' };
-    return { score: 100, color: '#10B981', label: 'Strong' };
+    setEmailDomainError(val.length > 0 && !val.toLowerCase().endsWith('@u.nus.edu'));
   };
 
   const handleAuthSubmit = async (e) => {
     e.preventDefault();
     setAuthError('');
-    if (emailDomainError) {
-      setAuthError('Please use a valid @u.nus.edu email address.');
-      return;
-    }
+    if (emailDomainError) return;
 
     setLoading(true);
-
     if (authTab === 'signup') {
-      if (password !== confirmPassword) {
-        setAuthError('Passwords do not match.');
-        setLoading(false);
-        return;
-      }
-
-      const { data, error } = await supabase.auth.signUp({
-        email, password, options: { data: { full_name: fullName } }
-      });
-
-      if (error) {
-        setAuthError(error.message);
-      } else if (data?.user) {
-        setCurrentUser(data.user);
-        setDisplayName(fullName || '');
-        setView('onboarding');
-      }
+      const { data, error } = await supabase.auth.signUp({ email, password, options: { data: { full_name: fullName } } });
+      if (error) setAuthError(error.message);
+      else if (data?.user) { setCurrentUser(data.user); setDisplayName(fullName || ''); setView('onboarding'); }
     } else {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email, password,
-      });
-
-      if (error) {
-        setAuthError(error.message);
-      } else if (data?.user) {
-        setCurrentUser(data.user);
-        setView('home');
-      }
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) setAuthError(error.message);
+      else if (data?.user) { setCurrentUser(data.user); setView('home'); }
     }
     setLoading(false);
   };
@@ -544,41 +729,22 @@ export default function Home() {
   const toggleSportSelect = (sportName) => {
     if (selectedSports.includes(sportName)) {
       setSelectedSports(selectedSports.filter((s) => s !== sportName));
-      const updated = { ...skillLevels };
-      delete updated[sportName];
-      setSkillLevels(updated);
     } else {
       setSelectedSports([...selectedSports, sportName]);
     }
   };
 
-  const handleSkillSelect = (sportName, level) => {
-    setSkillLevels({ ...skillLevels, [sportName]: level });
-  };
-
   const handleOnboardingComplete = async () => {
     setIsFinishing(true);
-    let finalSports = [...selectedSports];
-    if (finalSports.includes('Other') && customSport.trim()) {
-      finalSports = finalSports.filter((s) => s !== 'Other');
-      finalSports.push(customSport.trim());
-    }
-
     if (currentUser) {
       await supabase.from('profiles').upsert({
         id: currentUser.id,
-        sports_interested: finalSports,
+        sports_interested: selectedSports,
         difficulty_level: JSON.stringify(skillLevels),
       });
     }
-
-    setTimeout(() => {
-      setIsFinishing(false);
-      setView('home');
-    }, 400);
+    setTimeout(() => { setIsFinishing(false); setView('home'); }, 400);
   };
-
-  const strength = getPasswordStrength();
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
@@ -586,98 +752,29 @@ export default function Home() {
       {/* AUTH VIEW */}
       {view === 'auth' && (
         <div className="page-transition" style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-          <button
-            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            style={{
-              position: 'absolute', top: 16, right: 16, zIndex: 100, background: 'rgba(255,255,255,0.1)',
-              border: '1px solid rgba(255,255,255,0.2)', borderRadius: '50%', width: 36, height: 36,
-              display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ffffff', cursor: 'pointer'
-            }}
-          >
-            {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-          </button>
-          
-          <div style={{
-            height: '40vh', background: 'linear-gradient(160deg, #0F172A 0%, #1E3A5F 50%, #0F172A 100%)',
-            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-            padding: '20px', textAlign: 'center'
-          }}>
+          <div style={{ height: '40vh', background: 'linear-gradient(160deg, #0F172A 0%, #1E3A5F 50%, #0F172A 100%)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '20px', textAlign: 'center' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
               <Zap size={28} color="#3B82F6" fill="#3B82F6" />
-              <span style={{ fontSize: '28px', fontWeight: 800, color: '#ffffff', letterSpacing: '-0.02em' }}>SportAnytime</span>
+              <span style={{ fontSize: '28px', fontWeight: 800, color: '#ffffff' }}>SportAnytime</span>
             </div>
-            <p style={{ fontSize: '14px', color: '#94A3B8', marginBottom: '20px' }}>Find your game. Fill your team.</p>
-            <div style={{ display: 'flex', gap: '16px', fontSize: '20px', opacity: 0.8 }}>
-              <span>⚽</span><span>🏀</span><span>🏸</span><span>🎾</span>
-            </div>
+            <p style={{ fontSize: '14px', color: '#94A3B8' }}>Find your game. Fill your team.</p>
           </div>
 
-          <div style={{
-            flex: 1, backgroundColor: 'var(--card-surface)', borderTopLeftRadius: '24px', borderTopRightRadius: '24px',
-            marginTop: '-24px', padding: '24px 20px 32px 20px', display: 'flex', flexDirection: 'column'
-          }}>
-            <div style={{ display: 'flex', borderBottom: 'var(--border)', marginBottom: '24px', position: 'relative' }}>
-              <button onClick={() => setAuthTab('login')} style={{ flex: 1, padding: '12px 0', background: 'none', border: 'none', color: authTab === 'login' ? 'var(--text-primary)' : '#94A3B8', fontWeight: authTab === 'login' ? 700 : 400, fontSize: '15px', cursor: 'pointer', borderBottom: authTab === 'login' ? '2px solid #3B82F6' : '2px solid transparent', transition: 'all 200ms ease' }}>Log In</button>
-              <button onClick={() => setAuthTab('signup')} style={{ flex: 1, padding: '12px 0', background: 'none', border: 'none', color: authTab === 'signup' ? 'var(--text-primary)' : '#94A3B8', fontWeight: authTab === 'signup' ? 700 : 400, fontSize: '15px', cursor: 'pointer', borderBottom: authTab === 'signup' ? '2px solid #3B82F6' : '2px solid transparent', transition: 'all 200ms ease' }}>Sign Up</button>
-            </div>
-
+          <div style={{ flex: 1, backgroundColor: 'var(--card-surface)', borderTopLeftRadius: '24px', borderTopRightRadius: '24px', marginTop: '-24px', padding: '24px 20px', display: 'flex', flexDirection: 'column' }}>
             <form onSubmit={handleAuthSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px', flex: 1 }}>
               {authTab === 'signup' && (
-                <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#64748B', marginBottom: '6px' }}>FULL NAME</label>
-                  <input type="text" required placeholder="e.g. Alex Tan" className="input-field" value={fullName} onChange={(e) => setFullName(e.target.value)} />
-                </div>
+                <input type="text" required placeholder="Full Name" className="input-field" value={fullName} onChange={(e) => setFullName(e.target.value)} />
               )}
-              <div>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#64748B', marginBottom: '6px' }}>NUS EMAIL</label>
-                <input type="email" required placeholder="e0123456@u.nus.edu" className="input-field" value={email} onChange={(e) => handleEmailChange(e.target.value)} />
-                {emailDomainError && <p style={{ fontSize: '12px', color: '#EF4444', marginTop: '6px' }}>SportAnytime is currently available to NUS students only.</p>}
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#64748B', marginBottom: '6px' }}>PASSWORD</label>
-                <div style={{ position: 'relative' }}>
-                  <input type={showPassword ? 'text' : 'password'} required placeholder="••••••••" className="input-field" style={{ paddingRight: '48px' }} value={password} onChange={(e) => setPassword(e.target.value)} />
-                  <button type="button" onClick={() => setShowPassword(!showPassword)} style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#64748B', cursor: 'pointer' }}>
-                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                  </button>
-                </div>
-                {authTab === 'signup' && password.length > 0 && (
-                  <div style={{ marginTop: '8px' }}>
-                    <div style={{ height: '4px', width: '100%', backgroundColor: '#334155', borderRadius: '2px', overflow: 'hidden' }}>
-                      <div style={{ height: '100%', width: `${strength.score}%`, backgroundColor: strength.color, transition: 'all 200ms ease' }} />
-                    </div>
-                  </div>
-                )}
-                {authTab === 'login' && (
-                  <div style={{ textAlign: 'right', marginTop: '8px' }}>
-                    <span style={{ fontSize: '13px', color: '#3B82F6', cursor: 'pointer' }}>Forgot password?</span>
-                  </div>
-                )}
-              </div>
-              {authTab === 'signup' && (
-                <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#64748B', marginBottom: '6px' }}>CONFIRM PASSWORD</label>
-                  <input type="password" required placeholder="••••••••" className="input-field" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
-                </div>
-              )}
-              {authError && <p style={{ fontSize: '13px', color: '#EF4444', textAlign: 'center' }}>{authError}</p>}
-              
-              <button type="submit" disabled={loading || emailDomainError} className="btn-primary" style={{ marginTop: '8px' }}>
-                {loading ? 'Processing...' : authTab === 'login' ? 'Log In' : 'Create Account'}
+              <input type="email" required placeholder="e0123456@u.nus.edu" className="input-field" value={email} onChange={(e) => handleEmailChange(e.target.value)} />
+              <input type="password" required placeholder="••••••••" className="input-field" value={password} onChange={(e) => setPassword(e.target.value)} />
+              <button type="submit" disabled={loading} className="btn-primary">
+                {authTab === 'login' ? 'Log In' : 'Create Account'}
               </button>
-              
-              <p style={{ fontSize: '13px', color: '#64748B', textAlign: 'center', marginTop: '8px' }}>
-                {authTab === 'login' ? "Don't have an account? " : "Already have an account? "}
-                <span onClick={() => setAuthTab(authTab === 'login' ? 'signup' : 'login')} style={{ color: '#3B82F6', fontWeight: 600, cursor: 'pointer' }}>
-                  {authTab === 'login' ? 'Sign Up' : 'Log In'}
+              <p style={{ fontSize: '13px', color: '#64748B', textAlign: 'center' }}>
+                <span onClick={() => setAuthTab(authTab === 'login' ? 'signup' : 'login')} style={{ color: '#3B82F6', cursor: 'pointer' }}>
+                  {authTab === 'login' ? 'Need an account? Sign Up' : 'Have an account? Log In'}
                 </span>
               </p>
-              
-              <div style={{ marginTop: 'auto', paddingTop: '16px', borderTop: 'var(--border)', textAlign: 'center' }}>
-                <p style={{ fontSize: '11px', color: '#94A3B8' }}>
-                  By continuing you agree to our <span style={{ color: '#3B82F6' }}>Terms of Service</span> and <span style={{ color: '#3B82F6' }}>Privacy Policy</span>
-                </p>
-              </div>
             </form>
           </div>
         </div>
@@ -685,110 +782,10 @@ export default function Home() {
 
       {/* ONBOARDING VIEW */}
       {view === 'onboarding' && (
-        <div className="page-transition" style={{ minHeight: '100vh', padding: '20px', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '32px' }}>
-            {onboardingStep > 1 ? (
-              <button onClick={() => setOnboardingStep(onboardingStep - 1)} style={{ background: 'none', border: 'none', color: '#64748B', cursor: 'pointer' }}>
-                <ChevronLeft size={24} />
-              </button>
-            ) : <div style={{ width: 24 }} />}
-            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-              {[1, 2, 3].map((step) => (
-                <div key={step} style={{ height: 8, borderRadius: 4, width: onboardingStep === step ? 24 : 8, backgroundColor: onboardingStep === step ? '#3B82F6' : '#334155', transition: 'all 200ms ease' }} />
-              ))}
-            </div>
-            <div style={{ width: 24 }} />
-          </div>
-
-          {onboardingStep === 1 && (
-            <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
-              <h1 style={{ fontSize: '24px', fontWeight: 800, marginBottom: '6px' }}>Set up your profile</h1>
-              <p style={{ fontSize: '14px', color: '#64748B', marginBottom: '32px' }}>This is what other players will see</p>
-              <div style={{ alignSelf: 'center', position: 'relative', marginBottom: '32px' }}>
-                <div style={{ width: 96, height: 96, borderRadius: '50%', background: avatarUrl ? `url(${avatarUrl}) center/cover` : 'linear-gradient(135deg, #3B82F6, #8B5CF6)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ffffff' }}>
-                  {!avatarUrl && <User size={40} />}
-                </div>
-                <label style={{ position: 'absolute', bottom: 0, right: 0, width: 28, height: 28, borderRadius: '50%', backgroundColor: '#3B82F6', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ffffff', cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>
-                  <Camera size={14} />
-                  <input type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => { if (e.target.files && e.target.files[0]) setAvatarUrl(URL.createObjectURL(e.target.files[0])); }} />
-                </label>
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#64748B', letterSpacing: '0.06em', marginBottom: '8px' }}>DISPLAY NAME</label>
-                <input type="text" placeholder="How should we call you?" className="input-field" value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
-              </div>
-              <div style={{ marginTop: 'auto', paddingTop: '20px' }}>
-                <button disabled={displayName.trim().length < 2} className="btn-primary" onClick={() => setOnboardingStep(2)}>Continue</button>
-              </div>
-            </div>
-          )}
-
-          {onboardingStep === 2 && (
-            <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
-              <h1 style={{ fontSize: '24px', fontWeight: 800, marginBottom: '6px' }}>What do you play?</h1>
-              <p style={{ fontSize: '14px', color: '#64748B', marginBottom: '24px' }}>Select all that apply. You can change this later.</p>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', maxHeight: '52vh', overflowY: 'auto', paddingRight: '4px' }}>
-                {[
-                  { name: 'Football', emoji: '⚽' }, { name: 'Basketball', emoji: '🏀' }, { name: 'Badminton', emoji: '🏸' },
-                  { name: 'Tennis', emoji: '🎾' }, { name: 'Volleyball', emoji: '🏐' }, { name: 'Swimming', emoji: '🏊' },
-                  { name: 'Table Tennis', emoji: '🏓' }, { name: 'Boxing', emoji: '🥊' }, { name: 'Gym / Weightlifting', emoji: '🏋️' },
-                  { name: 'Yoga', emoji: '🧘' }, { name: 'Running', emoji: '🏃' }, { name: 'Billiards', emoji: '🎱' },
-                  { name: 'Hockey', emoji: '🏒' }, { name: 'Gymnastics', emoji: '🤸' }, { name: 'Other', emoji: '➕' }
-                ].map((sport) => {
-                  const isSelected = selectedSports.includes(sport.name);
-                  return (
-                    <div key={sport.name} onClick={() => toggleSportSelect(sport.name)} style={{ height: 80, borderRadius: 16, backgroundColor: isSelected ? 'rgba(59, 130, 246, 0.15)' : 'var(--card-surface)', border: isSelected ? '2px solid #3B82F6' : 'var(--border)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', position: 'relative', cursor: 'pointer', transition: 'all 150ms ease' }}>
-                      {isSelected && <div style={{ position: 'absolute', top: 8, right: 8, color: '#3B82F6' }}><Check size={16} /></div>}
-                      <span style={{ fontSize: '28px', marginBottom: '4px' }}>{sport.emoji}</span>
-                      <span style={{ fontSize: '14px', fontWeight: 600, color: isSelected ? '#3B82F6' : 'var(--text-primary)' }}>{sport.name}</span>
-                    </div>
-                  );
-                })}
-              </div>
-              {selectedSports.includes('Other') && (
-                <div style={{ marginTop: '16px' }}>
-                  <input type="text" placeholder="Enter custom sport name" className="input-field" value={customSport} onChange={(e) => setCustomSport(e.target.value)} />
-                </div>
-              )}
-              <div style={{ marginTop: 'auto', paddingTop: '20px' }}>
-                <button disabled={selectedSports.length === 0} className="btn-primary" onClick={() => setOnboardingStep(3)}>Continue</button>
-              </div>
-            </div>
-          )}
-
-          {onboardingStep === 3 && (
-            <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
-              <h1 style={{ fontSize: '24px', fontWeight: 800, marginBottom: '6px' }}>What&apos;s your level?</h1>
-              <p style={{ fontSize: '14px', color: '#64748B', marginBottom: '20px' }}>Be honest — it helps you find the right game.</p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '55vh', overflowY: 'auto' }}>
-                {selectedSports.map((sportName) => {
-                  const currentLevel = skillLevels[sportName];
-                  return (
-                    <div key={sportName} style={{ backgroundColor: 'var(--card-surface)', border: 'var(--border)', borderRadius: 16, padding: '16px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-                        <span style={{ fontSize: '15px', fontWeight: 700 }}>{sportName}</span>
-                      </div>
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px' }}>
-                        {['Beginner', 'Intermediate', 'Advanced', 'Professional'].map((level) => {
-                          const isLevelSelected = currentLevel === level;
-                          return (
-                            <button key={level} type="button" onClick={() => handleSkillSelect(sportName, level)} style={{ height: 36, borderRadius: 999, border: isLevelSelected ? 'none' : 'var(--border)', backgroundColor: isLevelSelected ? '#3B82F6' : 'transparent', color: isLevelSelected ? '#ffffff' : '#94A3B8', fontSize: '11px', fontWeight: 600, cursor: 'pointer', transition: 'all 150ms ease' }}>
-                              {level}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-              <div style={{ marginTop: 'auto', paddingTop: '20px' }}>
-                <button disabled={Object.keys(skillLevels).length < selectedSports.length} className="btn-primary" style={{ backgroundColor: isFinishing ? '#10B981' : '#3B82F6' }} onClick={handleOnboardingComplete}>
-                  {isFinishing ? 'Success! 🎉' : "Let's Go 🚀"}
-                </button>
-              </div>
-            </div>
-          )}
+        <div className="page-transition" style={{ padding: '20px', display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+          <h1 style={{ fontSize: '24px', fontWeight: 800, marginBottom: '16px' }}>Set up profile</h1>
+          <input type="text" placeholder="Display Name" className="input-field" value={displayName} onChange={(e) => setDisplayName(e.target.value)} style={{ marginBottom: '16px' }} />
+          <button className="btn-primary" onClick={handleOnboardingComplete}>Finish & Go to App 🚀</button>
         </div>
       )}
 
@@ -797,12 +794,36 @@ export default function Home() {
         <>
           {view === 'home' && <HomePage currentUser={currentUser} displayName={displayName} theme={theme} setTheme={setTheme} setView={setView} setHostDefaultSport={setHostDefaultSport} />}
           {view === 'host' && <HostPage currentUser={currentUser} defaultSport={hostDefaultSport} setView={setView} />}
-          {view === 'explore' && <div style={{ padding: '80px 20px', textAlign: 'center' }}>Explore Page Coming Soon (Step 8)</div>}
+          
+          {view === 'explore' && (
+            <>
+              {subView === 'list' && (
+                <ExplorePage onSelectActivity={(act) => { setSelectedActivity(act); setSubView('detail'); }} />
+              )}
+              {subView === 'detail' && selectedActivity && (
+                <ActivityDetailPage activity={selectedActivity} onBack={() => setSubView('list')} onProceedToBooking={() => setSubView('payment')} />
+              )}
+              {subView === 'payment' && selectedActivity && (
+                <PaymentPage activity={selectedActivity} currentUser={currentUser} onBack={() => setSubView('detail')} onSuccess={() => setSubView('booking_success')} />
+              )}
+              {subView === 'booking_success' && (
+                <div className="page-transition" style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '20px', textAlign: 'center', minHeight: '100vh' }}>
+                  <CheckCircle2 size={64} color="#10B981" style={{ marginBottom: '24px' }} />
+                  <h1 style={{ fontSize: '32px', fontWeight: 800, marginBottom: '8px' }}>You&apos;re In! 🎉</h1>
+                  <p style={{ fontSize: '15px', color: '#64748B', marginBottom: '32px' }}>Your spot is locked in. Get ready to play!</p>
+                  <button onClick={() => { setSubView('list'); setView('events'); }} className="btn-primary">
+                    View in Events
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+
           {view === 'social' && <div style={{ padding: '80px 20px', textAlign: 'center' }}>Social Page Coming Soon (Step 9)</div>}
           {view === 'events' && <div style={{ padding: '80px 20px', textAlign: 'center' }}>Events Page Coming Soon (Step 10)</div>}
           {view === 'settings' && <div style={{ padding: '80px 20px', textAlign: 'center' }}>Settings Page Coming Soon (Step 11)</div>}
           
-          {view !== 'host' && <BottomNav currentView={view} setView={setView} />}
+          {view !== 'host' && subView === 'list' && <BottomNav currentView={view} setView={setView} />}
         </>
       )}
 
