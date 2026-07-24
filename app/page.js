@@ -124,7 +124,6 @@ function ExplorePage({ onSelectActivity }) {
     setLoading(false);
   };
 
-  // Generate 14-day slider
   const days = Array.from({ length: 14 }, (_, i) => {
     const d = new Date();
     d.setDate(d.getDate() + i);
@@ -136,12 +135,10 @@ function ExplorePage({ onSelectActivity }) {
 
   return (
     <div className="page-transition" style={{ paddingBottom: '80px' }}>
-      {/* Sticky Header */}
       <div style={{ position: 'sticky', top: 0, backgroundColor: 'var(--bg-page)', borderBottom: 'var(--border)', padding: '16px 20px', zIndex: 40, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h1 style={{ fontSize: '20px', fontWeight: 800 }}>Explore</h1>
       </div>
 
-      {/* Date Slider */}
       <div style={{ position: 'sticky', top: '57px', backgroundColor: 'var(--bg-page)', zIndex: 39, borderBottom: 'var(--border)', padding: '12px 0' }}>
         <HStack style={{ padding: '0 20px', gap: '8px' }}>
           {days.map((d) => {
@@ -164,7 +161,6 @@ function ExplorePage({ onSelectActivity }) {
         </HStack>
       </div>
 
-      {/* Filter Bar */}
       <div style={{ padding: '12px 0', borderBottom: 'var(--border)' }}>
         <HStack style={{ padding: '0 20px', gap: '8px' }}>
           <select 
@@ -182,7 +178,6 @@ function ExplorePage({ onSelectActivity }) {
         </HStack>
       </div>
 
-      {/* Activity List */}
       <div style={{ padding: '20px' }}>
         {loading ? (
           <p style={{ textAlign: 'center', color: '#64748B', paddingTop: '40px' }}>Loading activities...</p>
@@ -247,7 +242,7 @@ function ExplorePage({ onSelectActivity }) {
   );
 }
 
-function ActivityDetailPage({ activity, onBack, onProceedToBooking }) {
+function ActivityDetailPage({ activity, onBack, onProceedToPlayers }) {
   const emoji = SPORT_EMOJIS[activity.sport] || '🏅';
   const grad = SPORT_GRADIENTS[activity.sport] || 'linear-gradient(135deg, #3B82F6, #1E3A5F)';
   const slotsLeft = activity.total_players - activity.confirmed_players;
@@ -255,7 +250,6 @@ function ActivityDetailPage({ activity, onBack, onProceedToBooking }) {
 
   return (
     <div className="page-transition" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', paddingBottom: '90px' }}>
-      {/* Hero Section */}
       <div style={{ height: '200px', background: grad, position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
         <button onClick={onBack} style={{ position: 'absolute', top: 16, left: 16, background: 'rgba(0,0,0,0.3)', border: 'none', borderRadius: '50%', width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', cursor: 'pointer' }}>
           <ChevronLeft size={24} />
@@ -288,7 +282,6 @@ function ActivityDetailPage({ activity, onBack, onProceedToBooking }) {
           <span style={{ fontSize: '15px', color: '#64748B' }}>{activity.confirmed_players} / {activity.total_players} players confirmed</span>
         </div>
 
-        {/* Slot Progress Bar */}
         <div style={{ width: '100%', height: '8px', backgroundColor: '#334155', borderRadius: '999px', overflow: 'hidden' }}>
           <div style={{ height: '100%', width: `${(activity.confirmed_players / activity.total_players) * 100}%`, backgroundColor: isFull ? '#EF4444' : '#3B82F6', transition: 'all 200ms ease' }} />
         </div>
@@ -300,14 +293,65 @@ function ActivityDetailPage({ activity, onBack, onProceedToBooking }) {
         )}
       </div>
 
-      {/* Sticky Bottom Action */}
       <div style={{ position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: '430px', padding: '16px 20px', backgroundColor: 'var(--card-surface)', borderTop: 'var(--border)', zIndex: 50 }}>
         <button 
-          onClick={onProceedToBooking}
+          onClick={onProceedToPlayers}
           className="btn-primary" 
           style={{ backgroundColor: isFull ? '#F59E0B' : '#3B82F6' }}
         >
           {isFull ? 'Join Waitlist' : "See Who's Playing →"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function PlayersPage({ activity, onBack, onProceedToPayment }) {
+  const DUMMY_NAMES = [
+    "Alex Tan", "Jordan Lee", "Taylor Wong", "Morgan Chen", "Casey Lim", 
+    "Riley Goh", "Jamie Ng", "Cameron Teo", "Sam Ong", "Drew Chua", 
+    "Jesse Koh", "Avery Yeo", "Logan Tay", "Hunter Ho", "Quinn Low", 
+    "Skyler Toh", "Rowan Sim", "Reese Chia", "Blake Liew", "Dylan Seah"
+  ];
+
+  const count = activity?.confirmed_players || 0;
+  // Pick dummy names based on confirmed count
+  const dummyPlayers = DUMMY_NAMES.slice(0, count);
+
+  return (
+    <div className="page-transition" style={{ minHeight: '100vh', padding: '20px', display: 'flex', flexDirection: 'column', paddingBottom: '90px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', marginBottom: '24px' }}>
+        <button onClick={onBack} style={{ background: 'none', border: 'none', color: '#64748B', cursor: 'pointer', padding: 0 }}>
+          <ChevronLeft size={24} />
+        </button>
+        <h1 style={{ flex: 1, textAlign: 'center', fontSize: '18px', fontWeight: 700, marginRight: '24px' }}>Who's Playing</h1>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+        {dummyPlayers.map((name, i) => (
+          <div key={i} style={{ borderRadius: '16px', backgroundColor: 'var(--card-surface)', padding: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', border: 'var(--border)' }}>
+            <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'linear-gradient(135deg, #3B82F6, #1E3A5F)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', marginBottom: '12px' }}>
+              <User size={28} />
+            </div>
+            <span style={{ fontSize: '14px', fontWeight: 700, marginBottom: '4px' }}>{name}</span>
+            <span style={{ fontSize: '11px', fontWeight: 600, padding: '3px 10px', borderRadius: '999px', backgroundColor: '#EFF6FF', color: '#3B82F6', textTransform: 'uppercase', marginBottom: '8px' }}>
+              {activity.difficulty}
+            </span>
+            <span style={{ fontSize: '13px', color: '#F59E0B', fontWeight: 600 }}>⚡ {Math.floor(Math.random() * 20) + 70}</span>
+          </div>
+        ))}
+        
+        {dummyPlayers.length === 0 && (
+          <div style={{ gridColumn: 'span 2', textAlign: 'center', padding: '40px 0', color: '#64748B' }}>
+            <Users size={48} color="#334155" style={{ margin: '0 auto 16px auto' }} />
+            <p style={{ fontSize: '15px', fontWeight: 600 }}>Be the first to join!</p>
+          </div>
+        )}
+      </div>
+
+      <div style={{ position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: '430px', padding: '16px 20px', backgroundColor: 'var(--card-surface)', borderTop: 'var(--border)', zIndex: 50 }}>
+        <button onClick={onProceedToPayment} className="btn-primary">
+          Confirm My Slot
         </button>
       </div>
     </div>
@@ -320,18 +364,15 @@ function PaymentPage({ activity, currentUser, onBack, onSuccess }) {
 
   const handlePay = async () => {
     setLoading(true);
-    // Insert Booking Record
     const { error } = await supabase.from('bookings').insert({
       activity_id: activity.id,
       user_id: currentUser.id
     });
 
     if (!error) {
-      // Increment confirmed_players in activities table
       await supabase.from('activities').update({
         confirmed_players: activity.confirmed_players + 1
       }).eq('id', activity.id);
-
       onSuccess();
     } else {
       alert('Booking failed or you already joined this activity.');
@@ -348,7 +389,6 @@ function PaymentPage({ activity, currentUser, onBack, onSuccess }) {
         <h1 style={{ flex: 1, textAlign: 'center', fontSize: '18px', fontWeight: 700, marginRight: '24px' }}>Complete Booking</h1>
       </div>
 
-      {/* Summary Card */}
       <div style={{ backgroundColor: 'var(--card-surface)', borderRadius: '16px', padding: '16px', border: 'var(--border)', marginBottom: '24px' }}>
         <div style={{ fontSize: '16px', fontWeight: 700, marginBottom: '4px' }}>{activity.sport} @ {activity.venue}</div>
         <div style={{ fontSize: '14px', color: '#64748B' }}>{activity.date} · {activity.start_time}</div>
@@ -415,7 +455,6 @@ function HostPage({ currentUser, defaultSport, setView }) {
   const [description, setDescription] = useState('');
 
   const today = new Date().toISOString().split('T')[0];
-
   const isTimeValid = startTime && endTime && endTime > startTime;
   const isPlayersValid = parseInt(confirmedPlayers) >= 0 && parseInt(confirmedPlayers) < parseInt(totalPlayers);
   const isFormComplete = sport && venue && (venue !== 'Other (type below)' || customVenue) && 
@@ -497,7 +536,6 @@ function HostPage({ currentUser, defaultSport, setView }) {
                 {GLOBAL_SPORTS.map(s => <option key={s} value={s}>{s}</option>)}
               </select>
             </div>
-
             <div>
               <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#64748B', marginBottom: '6px' }}>VENUE</label>
               <select className="input-field" value={venue} onChange={(e) => setVenue(e.target.value)}>
@@ -510,12 +548,10 @@ function HostPage({ currentUser, defaultSport, setView }) {
                 <input type="text" className="input-field" placeholder="Enter custom venue name" value={customVenue} onChange={(e) => setCustomVenue(e.target.value)} style={{ marginTop: '8px' }} />
               )}
             </div>
-
             <div>
               <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#64748B', marginBottom: '6px' }}>DATE</label>
               <input type="date" className="input-field" min={today} value={date} onChange={(e) => setDate(e.target.value)} />
             </div>
-
             <div style={{ display: 'flex', gap: '12px' }}>
               <div style={{ flex: 1 }}>
                 <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#64748B', marginBottom: '6px' }}>START TIME</label>
@@ -526,7 +562,6 @@ function HostPage({ currentUser, defaultSport, setView }) {
                 <input type="time" className="input-field" value={endTime} onChange={(e) => setEndTime(e.target.value)} />
               </div>
             </div>
-
             <div style={{ display: 'flex', gap: '12px' }}>
               <div style={{ flex: 1 }}>
                 <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#64748B', marginBottom: '6px' }}>TOTAL PLAYERS</label>
@@ -537,7 +572,6 @@ function HostPage({ currentUser, defaultSport, setView }) {
                 <input type="number" min="0" placeholder="e.g. 4" className="input-field" value={confirmedPlayers} onChange={(e) => setConfirmedPlayers(e.target.value)} />
               </div>
             </div>
-
             <div>
               <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#64748B', marginBottom: '6px' }}>DIFFICULTY LEVEL</label>
               <div style={{ display: 'flex', gap: '4px', height: '40px' }}>
@@ -551,7 +585,6 @@ function HostPage({ currentUser, defaultSport, setView }) {
                 ))}
               </div>
             </div>
-
             <div>
               <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#64748B', marginBottom: '6px' }}>FEE PER PERSON</label>
               <div style={{ position: 'relative' }}>
@@ -559,19 +592,13 @@ function HostPage({ currentUser, defaultSport, setView }) {
                 <input type="number" step="0.01" min="0" placeholder="0.00" className="input-field" style={{ paddingLeft: '60px' }} value={fee} onChange={(e) => setFee(e.target.value)} />
               </div>
             </div>
-
             <div>
               <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#64748B', marginBottom: '6px' }}>DESCRIPTION (OPTIONAL)</label>
               <textarea 
-                className="input-field" 
-                maxLength={300}
-                style={{ height: 'auto', padding: '16px', resize: 'none' }} 
-                rows={4} 
-                placeholder="Add any extra details..."
-                value={description} onChange={(e) => setDescription(e.target.value)}
+                className="input-field" maxLength={300} style={{ height: 'auto', padding: '16px', resize: 'none' }} rows={4} 
+                placeholder="Add any extra details..." value={description} onChange={(e) => setDescription(e.target.value)}
               />
             </div>
-
             <button onClick={() => setStep(2)} disabled={!isFormComplete} className="btn-primary" style={{ marginTop: '16px' }}>
               Review Activity →
             </button>
@@ -581,28 +608,12 @@ function HostPage({ currentUser, defaultSport, setView }) {
         {step === 2 && (
           <div className="page-transition">
             <div style={{ backgroundColor: 'var(--card-surface)', borderRadius: '16px', padding: '16px', border: 'var(--border)', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: '14px', color: '#64748B' }}>Sport</span>
-                <span style={{ fontSize: '15px', fontWeight: 700 }}>{sport}</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: '14px', color: '#64748B' }}>Venue</span>
-                <span style={{ fontSize: '15px', fontWeight: 600 }}>{finalVenue}</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: '14px', color: '#64748B' }}>Date</span>
-                <span style={{ fontSize: '15px', fontWeight: 600 }}>{date}</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: '14px', color: '#64748B' }}>Time</span>
-                <span style={{ fontSize: '15px', fontWeight: 600 }}>{startTime} - {endTime}</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: '14px', color: '#64748B' }}>Fee</span>
-                <span style={{ fontSize: '15px', fontWeight: 600 }}>SGD {parseFloat(fee).toFixed(2)}</span>
-              </div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}><span style={{ fontSize: '14px', color: '#64748B' }}>Sport</span><span style={{ fontSize: '15px', fontWeight: 700 }}>{sport}</span></div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}><span style={{ fontSize: '14px', color: '#64748B' }}>Venue</span><span style={{ fontSize: '15px', fontWeight: 600 }}>{finalVenue}</span></div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}><span style={{ fontSize: '14px', color: '#64748B' }}>Date</span><span style={{ fontSize: '15px', fontWeight: 600 }}>{date}</span></div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}><span style={{ fontSize: '14px', color: '#64748B' }}>Time</span><span style={{ fontSize: '15px', fontWeight: 600 }}>{startTime} - {endTime}</span></div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}><span style={{ fontSize: '14px', color: '#64748B' }}>Fee</span><span style={{ fontSize: '15px', fontWeight: 600 }}>SGD {parseFloat(fee).toFixed(2)}</span></div>
             </div>
-
             <button onClick={handlePostActivity} disabled={isSubmitting} className="btn-primary" style={{ marginTop: '24px', marginBottom: '12px' }}>
               {isSubmitting ? 'Posting...' : 'Post Activity'}
             </button>
@@ -677,9 +688,8 @@ export default function Home() {
   const [authTab, setAuthTab] = useState('login'); 
   const [hostDefaultSport, setHostDefaultSport] = useState('');
   const [selectedActivity, setSelectedActivity] = useState(null);
-  const [subView, setSubView] = useState('list'); // 'list' | 'detail' | 'payment' | 'booking_success'
+  const [subView, setSubView] = useState('list');
   
-  // Auth Form State
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -690,7 +700,6 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
 
-  // Onboarding State
   const [onboardingStep, setOnboardingStep] = useState(1);
   const [displayName, setDisplayName] = useState('');
   const [avatarUrl, setAvatarUrl] = useState(null);
@@ -727,20 +736,15 @@ export default function Home() {
   };
 
   const toggleSportSelect = (sportName) => {
-    if (selectedSports.includes(sportName)) {
-      setSelectedSports(selectedSports.filter((s) => s !== sportName));
-    } else {
-      setSelectedSports([...selectedSports, sportName]);
-    }
+    if (selectedSports.includes(sportName)) setSelectedSports(selectedSports.filter((s) => s !== sportName));
+    else setSelectedSports([...selectedSports, sportName]);
   };
 
   const handleOnboardingComplete = async () => {
     setIsFinishing(true);
     if (currentUser) {
       await supabase.from('profiles').upsert({
-        id: currentUser.id,
-        sports_interested: selectedSports,
-        difficulty_level: JSON.stringify(skillLevels),
+        id: currentUser.id, sports_interested: selectedSports, difficulty_level: JSON.stringify(skillLevels),
       });
     }
     setTimeout(() => { setIsFinishing(false); setView('home'); }, 400);
@@ -749,7 +753,6 @@ export default function Home() {
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
       
-      {/* AUTH VIEW */}
       {view === 'auth' && (
         <div className="page-transition" style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
           <div style={{ height: '40vh', background: 'linear-gradient(160deg, #0F172A 0%, #1E3A5F 50%, #0F172A 100%)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '20px', textAlign: 'center' }}>
@@ -762,14 +765,10 @@ export default function Home() {
 
           <div style={{ flex: 1, backgroundColor: 'var(--card-surface)', borderTopLeftRadius: '24px', borderTopRightRadius: '24px', marginTop: '-24px', padding: '24px 20px', display: 'flex', flexDirection: 'column' }}>
             <form onSubmit={handleAuthSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px', flex: 1 }}>
-              {authTab === 'signup' && (
-                <input type="text" required placeholder="Full Name" className="input-field" value={fullName} onChange={(e) => setFullName(e.target.value)} />
-              )}
+              {authTab === 'signup' && <input type="text" required placeholder="Full Name" className="input-field" value={fullName} onChange={(e) => setFullName(e.target.value)} />}
               <input type="email" required placeholder="e0123456@u.nus.edu" className="input-field" value={email} onChange={(e) => handleEmailChange(e.target.value)} />
               <input type="password" required placeholder="••••••••" className="input-field" value={password} onChange={(e) => setPassword(e.target.value)} />
-              <button type="submit" disabled={loading} className="btn-primary">
-                {authTab === 'login' ? 'Log In' : 'Create Account'}
-              </button>
+              <button type="submit" disabled={loading} className="btn-primary">{authTab === 'login' ? 'Log In' : 'Create Account'}</button>
               <p style={{ fontSize: '13px', color: '#64748B', textAlign: 'center' }}>
                 <span onClick={() => setAuthTab(authTab === 'login' ? 'signup' : 'login')} style={{ color: '#3B82F6', cursor: 'pointer' }}>
                   {authTab === 'login' ? 'Need an account? Sign Up' : 'Have an account? Log In'}
@@ -780,7 +779,6 @@ export default function Home() {
         </div>
       )}
 
-      {/* ONBOARDING VIEW */}
       {view === 'onboarding' && (
         <div className="page-transition" style={{ padding: '20px', display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
           <h1 style={{ fontSize: '24px', fontWeight: 800, marginBottom: '16px' }}>Set up profile</h1>
@@ -789,7 +787,6 @@ export default function Home() {
         </div>
       )}
 
-      {/* DASHBOARD CORE APP */}
       {view !== 'auth' && view !== 'onboarding' && (
         <>
           {view === 'home' && <HomePage currentUser={currentUser} displayName={displayName} theme={theme} setTheme={setTheme} setView={setView} setHostDefaultSport={setHostDefaultSport} />}
@@ -801,10 +798,13 @@ export default function Home() {
                 <ExplorePage onSelectActivity={(act) => { setSelectedActivity(act); setSubView('detail'); }} />
               )}
               {subView === 'detail' && selectedActivity && (
-                <ActivityDetailPage activity={selectedActivity} onBack={() => setSubView('list')} onProceedToBooking={() => setSubView('payment')} />
+                <ActivityDetailPage activity={selectedActivity} onBack={() => setSubView('list')} onProceedToPlayers={() => setSubView('players')} />
+              )}
+              {subView === 'players' && selectedActivity && (
+                <PlayersPage activity={selectedActivity} onBack={() => setSubView('detail')} onProceedToPayment={() => setSubView('payment')} />
               )}
               {subView === 'payment' && selectedActivity && (
-                <PaymentPage activity={selectedActivity} currentUser={currentUser} onBack={() => setSubView('detail')} onSuccess={() => setSubView('booking_success')} />
+                <PaymentPage activity={selectedActivity} currentUser={currentUser} onBack={() => setSubView('players')} onSuccess={() => setSubView('booking_success')} />
               )}
               {subView === 'booking_success' && (
                 <div className="page-transition" style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '20px', textAlign: 'center', minHeight: '100vh' }}>
