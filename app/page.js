@@ -3,9 +3,10 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../utils/supabase';
 import { 
-  Zap, Bell, Eye, EyeOff, ChevronLeft, User, Camera, Check, Sun, Moon, 
+  Zap, Bell, Eye, EyeOff, ChevronLeft, ChevronRight, User, Camera, Check, Sun, Moon, 
   MapPin, Clock, Plus, Search, Globe, Calendar as CalendarIcon, Settings,
-  CheckCircle, CheckCircle2, Users, BarChart2, CreditCard, AlignLeft, SearchX, Smartphone, Heart
+  CheckCircle, CheckCircle2, Users, BarChart2, CreditCard, AlignLeft, SearchX, Smartphone, Heart,
+  MessageCircle
 } from 'lucide-react';
 
 // --- SUB-COMPONENTS ---
@@ -125,8 +126,192 @@ const SPORT_GRADIENTS = {
   'Other': 'linear-gradient(135deg, #475569, #334155)'
 };
 
-// --- SOCIAL FEED FLOW ---
+// --- EVENTS & CALENDAR FLOW ---
 
+function EventsPage({ theme, setTheme }) {
+  const [tab, setTab] = useState('upcoming'); // 'upcoming' | 'past'
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [selectedDay, setSelectedDay] = useState(null);
+
+  // Generate dynamic mock data based on today so the calendar is always populated for the prototype
+  const today = new Date();
+  const ymd = (d) => { const nd = new Date(d); return `${nd.getFullYear()}-${String(nd.getMonth()+1).padStart(2, '0')}-${String(nd.getDate()).padStart(2, '0')}`; };
+  
+  const MOCK_EVENTS = [
+    { id: 1, sport: 'Badminton', venue: 'MPSH 1', date: ymd(today.setDate(today.getDate() + 2)), time: '6:00 PM – 8:00 PM', role: 'Host', isPast: false },
+    { id: 2, sport: 'Football', venue: 'Kent Ridge Paddock', date: ymd(today.setDate(today.getDate() + 3)), time: '8:00 PM – 10:00 PM', role: 'Player', isPast: false },
+    { id: 3, sport: 'Basketball', venue: 'UTown Sports Hall', date: ymd(today), time: '10:00 AM – 12:00 PM', role: 'Host', isPast: false }, // Same day test
+    { id: 4, sport: 'Tennis', venue: 'University Cultural Centre', date: ymd(today.setDate(today.getDate() - 8)), time: '4:00 PM – 6:00 PM', role: 'Player', isPast: true, rated: false },
+    { id: 5, sport: 'Swimming', venue: 'USC Pool', date: ymd(today.setDate(today.getDate() - 14)), time: '7:00 AM – 9:00 AM', role: 'Player', isPast: true, rated: true },
+  ];
+  // Reset today back to actual today
+  const actualTodayIso = new Date().toISOString().split('T')[0];
+
+  const filteredEvents = MOCK_EVENTS.filter(e => tab === 'upcoming' ? !e.isPast : e.isPast);
+  
+  // Calendar Logic
+  const year = currentDate.getFullYear();
+  const month = currentDate.getMonth();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const firstDayOfMonth = new Date(year, month, 1).getDay();
+
+  const prevMonth = () => setCurrentDate(new Date(year, month - 1, 1));
+  const nextMonth = () => setCurrentDate(new Date(year, month + 1, 1));
+
+  const getDayStatus = (isoString) => {
+    const eventsOnDay = filteredEvents.filter(e => e.date === isoString);
+    if (eventsOnDay.length === 0) return 'none';
+    const isHosting = eventsOnDay.some(e => e.role === 'Host');
+    const isPlaying = eventsOnDay.some(e => e.role === 'Player');
+    if (isHosting && isPlaying) return 'both';
+    if (isHosting) return 'host';
+    return 'player';
+  };
+
+  const renderDays = () => {
+    const blanks = Array.from({ length: firstDayOfMonth }, (_, i) => <div key={`blank-${i}`} />);
+    const days = Array.from({ length: daysInMonth }, (_, i) => {
+      const dayNum = i + 1;
+      const isoString = `${year}-${String(month + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
+      const status = getDayStatus(isoString);
+      const isSelected = selectedDay === isoString;
+      const isToday = isoString === actualTodayIso;
+
+      let textStyle = { fontSize: '14px', fontWeight: 400, color: '#94A3B8' };
+      if (status === 'host') textStyle = { fontSize: '18px', fontWeight: 800, color: '#3B82F6' };
+      else if (status === 'player') textStyle = { fontSize: '18px', fontWeight: 800, color: '#10B981' };
+      else if (status === 'both') textStyle = { fontSize: '18px', fontWeight: 800, background: 'linear-gradient(to right, #3B82F6 50%, #10B981 50%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' };
+
+      if (isSelected) {
+        textStyle = { fontSize: '18px', fontWeight: 800, color: '#ffffff', background: 'none', WebkitTextFillColor: 'initial' };
+      }
+
+      return (
+        <div key={dayNum} onClick={() => { if (status !== 'none') setSelectedDay(isSelected ? null : isoString); }} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '40px', cursor: status !== 'none' ? 'pointer' : 'default' }}>
+          <div style={{
+            width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            borderRadius: '50%', backgroundColor: isSelected ? '#3B82F6' : 'transparent',
+            borderBottom: isToday && !isSelected && status === 'none' ? '2px solid #3B82F6' : 'none',
+            transition: 'all 150ms ease'
+          }}>
+            <span style={textStyle}>{dayNum}</span>
+          </div>
+        </div>
+      );
+    });
+    return [...blanks, ...days];
+  };
+
+  const selectedDayEvents = selectedDay ? filteredEvents.filter(e => e.date === selectedDay) : [];
+
+  return (
+    <div className="page-transition" style={{ paddingBottom: '80px', minHeight: '100vh' }}>
+      <div style={{ position: 'sticky', top: 0, backgroundColor: 'var(--bg-page)', borderBottom: 'var(--border)', padding: '16px 20px', zIndex: 40, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <h1 style={{ fontSize: '20px', fontWeight: 800 }}>My Events</h1>
+        <button onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
+          {theme === 'dark' ? <Sun size={22} color="#64748B" /> : <Moon size={22} color="#64748B" />}
+        </button>
+      </div>
+
+      <div style={{ display: 'flex', borderBottom: 'var(--border)', position: 'relative' }}>
+        <button onClick={() => { setTab('upcoming'); setSelectedDay(null); }} style={{ flex: 1, padding: '12px 0', background: 'none', border: 'none', color: tab === 'upcoming' ? 'var(--text-primary)' : '#94A3B8', fontWeight: tab === 'upcoming' ? 700 : 400, fontSize: '15px', cursor: 'pointer', borderBottom: tab === 'upcoming' ? '2px solid #3B82F6' : '2px solid transparent', transition: 'all 200ms ease' }}>
+          Upcoming
+        </button>
+        <button onClick={() => { setTab('past'); setSelectedDay(null); }} style={{ flex: 1, padding: '12px 0', background: 'none', border: 'none', color: tab === 'past' ? 'var(--text-primary)' : '#94A3B8', fontWeight: tab === 'past' ? 700 : 400, fontSize: '15px', cursor: 'pointer', borderBottom: tab === 'past' ? '2px solid #3B82F6' : '2px solid transparent', transition: 'all 200ms ease' }}>
+          Past
+        </button>
+      </div>
+
+      <div style={{ padding: '20px' }}>
+        <div style={{ backgroundColor: 'var(--card-surface)', borderRadius: '16px', padding: '16px', border: 'var(--border)', boxShadow: '0 4px 16px rgba(0,0,0,0.04)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+            <button onClick={prevMonth} style={{ background: 'none', border: 'none', color: '#64748B', cursor: 'pointer' }}><ChevronLeft size={20} /></button>
+            <span style={{ fontSize: '15px', fontWeight: 700 }}>{currentDate.toLocaleString('default', { month: 'long' })} {year}</span>
+            <button onClick={nextMonth} style={{ background: 'none', border: 'none', color: '#64748B', cursor: 'pointer' }}><ChevronRight size={20} /></button>
+          </div>
+          
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px', textAlign: 'center', marginBottom: '8px' }}>
+            {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
+              <span key={i} style={{ fontSize: '11px', fontWeight: 600, color: '#64748B' }}>{day}</span>
+            ))}
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px' }}>
+            {renderDays()}
+          </div>
+        </div>
+      </div>
+
+      {selectedDay && selectedDayEvents.length > 0 && (
+        <div className="page-transition" style={{ padding: '0 20px 20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <h3 style={{ fontSize: '14px', fontWeight: 700, color: '#64748B', marginBottom: '4px' }}>
+            {new Date(selectedDay).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
+          </h3>
+          {selectedDayEvents.map(act => {
+            const isHost = act.role === 'Host';
+            const bgLight = isHost ? '#EFF6FF' : '#F0FDF4';
+            const bgDark = isHost ? '#1E3A5F' : '#1A3A2E';
+            const accent = isHost ? '#3B82F6' : '#10B981';
+
+            return (
+              <div key={act.id} style={{
+                borderRadius: '16px', backgroundColor: theme === 'dark' ? bgDark : bgLight,
+                border: 'var(--border)', borderLeft: `4px solid ${accent}`, padding: '16px',
+                display: 'flex', flexDirection: 'column', gap: '12px'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+                      <span style={{ fontSize: '18px' }}>{SPORT_EMOJIS[act.sport]}</span>
+                      <span style={{ fontSize: '15px', fontWeight: 700 }}>{act.sport}</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#64748B', fontSize: '13px' }}>
+                      <MapPin size={12} /> {act.venue}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#64748B', fontSize: '13px', marginTop: '2px' }}>
+                      <Clock size={12} /> {act.time}
+                    </div>
+                  </div>
+                  <div style={{
+                    backgroundColor: isHost ? 'rgba(59,130,246,0.15)' : 'rgba(16,185,129,0.15)',
+                    color: accent, borderRadius: '999px', padding: '4px 10px', fontSize: '11px', fontWeight: 700
+                  }}>
+                    {act.role}
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+                  <button style={{
+                    flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                    height: '36px', borderRadius: '999px', border: 'var(--border)', backgroundColor: 'var(--card-surface)',
+                    fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', cursor: 'pointer'
+                  }}>
+                    <MessageCircle size={14} color="#3B82F6" /> Chat
+                  </button>
+                  {act.isPast && (
+                    <button style={{
+                      flex: 1, height: '36px', borderRadius: '999px', border: act.rated ? 'var(--border)' : 'none',
+                      backgroundColor: act.rated ? 'transparent' : '#F59E0B', color: act.rated ? '#94A3B8' : '#ffffff',
+                      fontSize: '13px', fontWeight: 600, cursor: act.rated ? 'default' : 'pointer'
+                    }}>
+                      {act.rated ? 'Rated ✓' : 'Rate Team'}
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {selectedDay && selectedDayEvents.length === 0 && (
+        <p style={{ textAlign: 'center', color: '#94A3B8', fontSize: '14px', padding: '20px' }}>No events on this date.</p>
+      )}
+    </div>
+  );
+}
+
+
+// --- SOCIAL FEED FLOW ---
 function SocialPage({ theme, setTheme }) {
   const [tab, setTab] = useState('foryou');
   const [likedPosts, setLikedPosts] = useState({});
@@ -599,6 +784,7 @@ export default function Home() {
           {view === 'home' && <HomePage currentUser={currentUser} displayName={displayName} theme={theme} setTheme={setTheme} setView={setView} setHostDefaultSport={setHostDefaultSport} />}
           {view === 'host' && <HostPage currentUser={currentUser} defaultSport={hostDefaultSport} setView={setView} />}
           {view === 'social' && <SocialPage theme={theme} setTheme={setTheme} />}
+          {view === 'events' && <EventsPage theme={theme} setTheme={setTheme} />}
           {view === 'explore' && (
             <>
               {subView === 'list' && <ExplorePage onSelectActivity={(act) => { setSelectedActivity(act); setSubView('detail'); }} />}
@@ -617,7 +803,6 @@ export default function Home() {
             </>
           )}
 
-          {view === 'events' && <div style={{ padding: '80px 20px', textAlign: 'center' }}>Events Page Coming Soon (Step 10)</div>}
           {view === 'settings' && <div style={{ padding: '80px 20px', textAlign: 'center' }}>Settings Page Coming Soon (Step 11)</div>}
           
           {view !== 'host' && subView === 'list' && <BottomNav currentView={view} setView={setView} />}
