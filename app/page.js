@@ -6,8 +6,23 @@ import {
   Zap, Bell, Eye, EyeOff, ChevronLeft, ChevronRight, ChevronDown, User, Camera, Check, Sun, Moon, 
   MapPin, Clock, Plus, Search, Globe, Calendar as CalendarIcon, Settings,
   CheckCircle, CheckCircle2, Users, BarChart2, CreditCard, AlignLeft, SearchX, Smartphone, Heart,
-  MessageCircle
+  MessageCircle, Send, Paperclip
 } from 'lucide-react';
+
+// --- HELPER TO GENERATE LIVE PROTOTYPE MOCKS ---
+const getMockActivities = () => {
+  const today = new Date();
+  const ymd = (d) => { const nd = new Date(d); return `${nd.getFullYear()}-${String(nd.getMonth()+1).padStart(2, '0')}-${String(nd.getDate()).padStart(2, '0')}`; };
+  
+  const tomorrow = new Date(today); tomorrow.setDate(tomorrow.getDate() + 1);
+  const dayAfter = new Date(today); dayAfter.setDate(dayAfter.getDate() + 2);
+
+  return [
+    { id: 'mock-1', sport: 'Football', venue: 'Kent Ridge Paddock', date: ymd(tomorrow), start_time: '18:00', end_time: '20:00', total_players: 22, confirmed_players: 18, difficulty: 'Intermediate', fee: 5.00, host_name: 'Alex Tan', host_id: 'mock-alex', isMock: true, description: 'Casual kickabout. Bring dark and light shirts!' },
+    { id: 'mock-2', sport: 'Badminton', venue: 'MPSH 1', date: ymd(today), start_time: '19:00', end_time: '21:00', total_players: 4, confirmed_players: 3, difficulty: 'Advanced', fee: 4.50, host_name: 'Jamie Ng', host_id: 'mock-jamie', isMock: true, description: 'Need one more for doubles.' },
+    { id: 'mock-3', sport: 'Basketball', venue: 'UTown Sports Hall', date: ymd(dayAfter), start_time: '16:00', end_time: '18:00', total_players: 10, confirmed_players: 6, difficulty: 'Beginner', fee: 0.00, host_name: 'Taylor Wong', host_id: 'mock-taylor', isMock: true, description: 'Friendly game, beginners welcome.' }
+  ];
+};
 
 // --- SUB-COMPONENTS ---
 
@@ -15,9 +30,7 @@ function HStack({ children, style = {}, ...props }) {
   return (
     <div
       style={{
-        display: 'flex', flexDirection: 'row', alignItems: 'center',
-        overflowX: 'auto', scrollbarWidth: 'none', msOverflowStyle: 'none',
-        WebkitOverflowScrolling: 'touch', ...style
+        display: 'flex', flexDirection: 'row', alignItems: 'center', overflowX: 'auto', scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch', ...style
       }}
       {...props}
     >
@@ -38,25 +51,14 @@ function BottomNav({ currentView, setView }) {
 
   return (
     <div style={{
-      position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
-      width: '100%', maxWidth: '430px', height: '64px', backgroundColor: 'var(--card-surface)',
-      borderTop: 'var(--border)', display: 'flex', justifyContent: 'space-around',
-      alignItems: 'center', paddingBottom: 'env(safe-area-inset-bottom)', zIndex: 50
+      position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: '430px', height: '64px', backgroundColor: 'var(--card-surface)',
+      borderTop: 'var(--border)', display: 'flex', justifyContent: 'space-around', alignItems: 'center', paddingBottom: 'env(safe-area-inset-bottom)', zIndex: 50
     }}>
       {tabs.map(({ id, label, Icon }) => {
         const isActive = currentView === id || (currentView === 'home' && id === 'explore');
         return (
-          <button
-            key={id} onClick={() => setView(id)}
-            style={{
-              background: 'none', border: 'none', display: 'flex', flexDirection: 'column',
-              alignItems: 'center', justifyContent: 'center', gap: '4px',
-              color: isActive ? '#3B82F6' : '#64748B', cursor: 'pointer', width: '60px', position: 'relative'
-            }}
-          >
-            {isActive && (
-              <div style={{ position: 'absolute', top: '-10px', width: '4px', height: '4px', backgroundColor: '#3B82F6', borderRadius: '2px' }} />
-            )}
+          <button key={id} onClick={() => setView(id)} style={{ background: 'none', border: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '4px', color: isActive ? '#3B82F6' : '#64748B', cursor: 'pointer', width: '60px', position: 'relative' }}>
+            {isActive && (<div style={{ position: 'absolute', top: '-10px', width: '4px', height: '4px', backgroundColor: '#3B82F6', borderRadius: '2px' }} />)}
             <Icon size={24} />
             <span style={{ fontSize: '10px', fontWeight: 600 }}>{label}</span>
           </button>
@@ -69,27 +71,13 @@ function BottomNav({ currentView, setView }) {
 function ShareModal({ isOpen, onShare, onDismiss, actionText }) {
   if (!isOpen) return null;
   return (
-    <div className="page-transition" style={{
-      position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
-      backgroundColor: 'rgba(0,0,0,0.7)', zIndex: 100, display: 'flex',
-      alignItems: 'center', justifyContent: 'center', padding: '20px'
-    }}>
-      <div style={{
-        backgroundColor: 'var(--card-surface)', borderRadius: '24px', padding: '24px',
-        width: '100%', maxWidth: '340px', textAlign: 'center', border: 'var(--border)',
-        boxShadow: '0 20px 40px rgba(0,0,0,0.2)'
-      }}>
+    <div className="page-transition" style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.7)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+      <div style={{ backgroundColor: 'var(--card-surface)', borderRadius: '24px', padding: '24px', width: '100%', maxWidth: '340px', textAlign: 'center', border: 'var(--border)', boxShadow: '0 20px 40px rgba(0,0,0,0.2)' }}>
         <Globe size={48} color="#3B82F6" style={{ margin: '0 auto 16px' }} />
         <h3 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '8px' }}>Share to Community?</h3>
-        <p style={{ fontSize: '14px', color: '#64748B', marginBottom: '24px', lineHeight: 1.5 }}>
-          Let your followers know you {actionText} to get more people in the game.
-        </p>
-        <button onClick={onShare} className="btn-primary" style={{ marginBottom: '12px' }}>
-          Share to Feed
-        </button>
-        <button onClick={onDismiss} className="btn-primary" style={{ backgroundColor: 'transparent', border: '1.5px solid #334155', color: '#94A3B8', boxShadow: 'none' }}>
-          Keep it Private
-        </button>
+        <p style={{ fontSize: '14px', color: '#64748B', marginBottom: '24px', lineHeight: 1.5 }}>Let your followers know you {actionText} to get more people in the game.</p>
+        <button onClick={onShare} className="btn-primary" style={{ marginBottom: '12px' }}>Share to Feed</button>
+        <button onClick={onDismiss} className="btn-primary" style={{ backgroundColor: 'transparent', border: '1.5px solid #334155', color: '#94A3B8', boxShadow: 'none' }}>Keep it Private</button>
       </div>
     </div>
   );
@@ -101,34 +89,70 @@ const GLOBAL_SPORTS = [
   'Yoga', 'Running', 'Billiards', 'Hockey', 'Gymnastics', 'Other'
 ];
 
-const SPORT_COLORS = {
-  'Football': '#16213e', 'Basketball': '#f97316', 'Badminton': '#10b981',
-  'Tennis': '#f59e0b', 'Volleyball': '#8b5cf6', 'Swimming': '#06b6d4',
-  'Table Tennis': '#ec4899', 'Running': '#f43f5e', 'Other': '#3B82F6'
-};
+const SPORT_COLORS = { 'Football': '#16213e', 'Basketball': '#f97316', 'Badminton': '#10b981', 'Tennis': '#f59e0b', 'Volleyball': '#8b5cf6', 'Swimming': '#06b6d4', 'Table Tennis': '#ec4899', 'Running': '#f43f5e', 'Other': '#3B82F6' };
+const SPORT_EMOJIS = { 'Football': '⚽', 'Basketball': '🏀', 'Badminton': '🏸', 'Tennis': '🎾', 'Volleyball': '🏐', 'Swimming': '🏊', 'Table Tennis': '🏓', 'Boxing': '🥊', 'Gym / Weightlifting': '🏋️', 'Yoga': '🧘', 'Running': '🏃', 'Billiards': '🎱', 'Hockey': '🏒', 'Gymnastics': '🤸', 'Other': '➕' };
+const SPORT_GRADIENTS = { 'Football': 'linear-gradient(135deg, #1a1a2e, #16213e)', 'Basketball': 'linear-gradient(135deg, #f97316, #ea580c)', 'Badminton': 'linear-gradient(135deg, #10b981, #059669)', 'Tennis': 'linear-gradient(135deg, #f59e0b, #d97706)', 'Volleyball': 'linear-gradient(135deg, #8b5cf6, #7c3aed)', 'Swimming': 'linear-gradient(135deg, #06b6d4, #0891b2)', 'Table Tennis': 'linear-gradient(135deg, #ec4899, #db2777)', 'Running': 'linear-gradient(135deg, #f43f5e, #e11d48)', 'Other': 'linear-gradient(135deg, #475569, #334155)' };
 
-const SPORT_EMOJIS = {
-  'Football': '⚽', 'Basketball': '🏀', 'Badminton': '🏸', 'Tennis': '🎾',
-  'Volleyball': '🏐', 'Swimming': '🏊', 'Table Tennis': '🏓', 'Boxing': '🥊',
-  'Gym / Weightlifting': '🏋️', 'Yoga': '🧘', 'Running': '🏃', 'Billiards': '🎱',
-  'Hockey': '🏒', 'Gymnastics': '🤸', 'Other': '➕'
-};
+// --- NEW CHAT PAGE COMPONENT ---
+function ChatPage({ activity, currentUser, onBack }) {
+  const hostName = activity.host_name || "Alex Tan";
+  const [messages, setMessages] = useState([
+    { id: 1, text: "Hey! Looking forward to the session.", isMe: false, sender: hostName, time: "10:00 AM" },
+    { id: 2, text: "See you guys there!", isMe: false, sender: "Taylor Wong", time: "10:05 AM" }
+  ]);
+  const [input, setInput] = useState('');
 
-const SPORT_GRADIENTS = {
-  'Football': 'linear-gradient(135deg, #1a1a2e, #16213e)',
-  'Basketball': 'linear-gradient(135deg, #f97316, #ea580c)',
-  'Badminton': 'linear-gradient(135deg, #10b981, #059669)',
-  'Tennis': 'linear-gradient(135deg, #f59e0b, #d97706)',
-  'Volleyball': 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
-  'Swimming': 'linear-gradient(135deg, #06b6d4, #0891b2)',
-  'Table Tennis': 'linear-gradient(135deg, #ec4899, #db2777)',
-  'Running': 'linear-gradient(135deg, #f43f5e, #e11d48)',
-  'Other': 'linear-gradient(135deg, #475569, #334155)'
-};
+  const handleSend = (e) => {
+    e.preventDefault();
+    if (!input.trim()) return;
+    setMessages([...messages, { id: Date.now(), text: input, isMe: true, sender: currentUser?.user_metadata?.full_name || 'Me', time: 'Now' }]);
+    setInput('');
+  };
 
-// --- EVENTS & CALENDAR FLOW ---
+  return (
+    <div className="page-transition" style={{ display: 'flex', flexDirection: 'column', height: '100vh', backgroundColor: 'var(--bg-page)' }}>
+      <div style={{ padding: '16px 20px', borderBottom: 'var(--border)', display: 'flex', alignItems: 'center', backgroundColor: 'var(--card-surface)' }}>
+        <button onClick={onBack} style={{ background: 'none', border: 'none', color: '#64748B', cursor: 'pointer', padding: 0 }}><ChevronLeft size={24} /></button>
+        <h1 style={{ flex: 1, textAlign: 'center', fontSize: '16px', fontWeight: 700, marginRight: '24px' }}>{activity.sport} · {activity.venue}</h1>
+      </div>
+      <div style={{ backgroundColor: 'var(--card-surface)', padding: '6px 20px', textAlign: 'center', borderBottom: 'var(--border)' }}>
+        <span style={{ fontSize: '12px', color: '#94A3B8' }}>{activity.total_players} participants · {activity.date} · {activity.start_time}</span>
+      </div>
 
-function EventsPage({ theme, setTheme, currentUser, onJoinActivity }) {
+      <div style={{ flex: 1, overflowY: 'auto', padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        {messages.map(msg => (
+          <div key={msg.id} style={{ display: 'flex', flexDirection: 'column', alignItems: msg.isMe ? 'flex-end' : 'flex-start' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px', maxWidth: '80%' }}>
+              {!msg.isMe && (
+                <div style={{ width: 28, height: 28, borderRadius: '50%', backgroundColor: '#1E3A5F', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', flexShrink: 0 }}>
+                  <span style={{ fontSize: '12px', fontWeight: 600 }}>{msg.sender.charAt(0)}</span>
+                </div>
+              )}
+              <div style={{ backgroundColor: msg.isMe ? '#3B82F6' : 'var(--card-surface)', color: msg.isMe ? '#ffffff' : 'var(--text-primary)', padding: '12px 16px', borderRadius: msg.isMe ? '16px 16px 4px 16px' : '16px 16px 16px 4px', border: msg.isMe ? 'none' : 'var(--border)', fontSize: '14px', lineHeight: 1.4 }}>
+                {msg.text}
+              </div>
+            </div>
+            <div style={{ fontSize: '11px', color: '#94A3B8', marginTop: '4px', paddingLeft: msg.isMe ? 0 : '36px' }}>
+              {msg.sender} {msg.sender === hostName ? '👑' : ''} · {msg.time}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <form onSubmit={handleSend} style={{ padding: '16px 20px', borderTop: 'var(--border)', backgroundColor: 'var(--card-surface)', display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <Paperclip size={20} color="#64748B" />
+        <input value={input} onChange={(e) => setInput(e.target.value)} placeholder="Message the group..." style={{ flex: 1, height: '40px', borderRadius: '999px', backgroundColor: 'var(--input-bg)', border: 'var(--border)', padding: '0 16px', fontSize: '14px', color: 'var(--text-primary)', outline: 'none' }} />
+        <button type="submit" disabled={!input.trim()} style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: '#3B82F6', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: input.trim() ? 1 : 0.5, transition: 'opacity 200ms', cursor: 'pointer' }}>
+          <Send size={18} color="#ffffff" style={{ position: 'relative', right: '1px', top: '1px' }}/>
+        </button>
+      </form>
+    </div>
+  );
+}
+
+// --- MAIN PAGES ---
+
+function EventsPage({ theme, setTheme, currentUser, onJoinActivity, onOpenChat, joinedMocks }) {
   const [tab, setTab] = useState('upcoming');
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDay, setSelectedDay] = useState(null);
@@ -136,22 +160,22 @@ function EventsPage({ theme, setTheme, currentUser, onJoinActivity }) {
   const [myBookings, setMyBookings] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchEvents();
-  }, [tab]); // refetch seamlessly
+  useEffect(() => { fetchEvents(); }, [tab]);
 
   const fetchEvents = async () => {
     setLoading(true);
     const { data: acts } = await supabase.from('activities').select('*');
     const { data: bks } = await supabase.from('bookings').select('activity_id').eq('user_id', currentUser.id);
-    setActivities(acts || []);
+    
+    // Inject Mock Activities into the system
+    const allActs = [...(acts || []), ...getMockActivities()];
+    setActivities(allActs);
     setMyBookings(bks ? bks.map(b => b.activity_id) : []);
     setLoading(false);
   };
 
   const actualTodayIso = new Date().toISOString().split('T')[0];
   const now = new Date();
-  
   const personal = [];
   const community = [];
 
@@ -159,31 +183,24 @@ function EventsPage({ theme, setTheme, currentUser, onJoinActivity }) {
     const actDate = new Date(`${act.date}T${act.start_time}`);
     const isPast = actDate < now;
     const isHost = act.host_id === currentUser.id;
-    const isPlayer = myBookings.includes(act.id);
+    const isPlayer = myBookings.includes(act.id) || joinedMocks.includes(act.id);
     
-    if (isHost || isPlayer) {
-      personal.push({ ...act, isPast, role: isHost ? 'Host' : 'Player' });
-    } else {
-      community.push({ ...act, isPast });
-    }
+    if (isHost || isPlayer) personal.push({ ...act, isPast, role: isHost ? 'Host' : 'Player' });
+    else community.push({ ...act, isPast });
   });
 
   const getDayStatus = (isoString) => {
     const pOnDay = personal.filter(e => e.date === isoString && (tab === 'upcoming' ? !e.isPast : e.isPast));
     const cOnDay = community.filter(e => e.date === isoString && (tab === 'upcoming' ? !e.isPast : e.isPast));
-    
     if (pOnDay.length > 0 && cOnDay.length > 0) return 'both';
     if (pOnDay.length > 0) return 'personal';
     if (cOnDay.length > 0) return 'community';
     return 'none';
   };
 
-  const year = currentDate.getFullYear();
-  const month = currentDate.getMonth();
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const firstDayOfMonth = new Date(year, month, 1).getDay();
-  const prevMonth = () => setCurrentDate(new Date(year, month - 1, 1));
-  const nextMonth = () => setCurrentDate(new Date(year, month + 1, 1));
+  const year = currentDate.getFullYear(); const month = currentDate.getMonth();
+  const daysInMonth = new Date(year, month + 1, 0).getDate(); const firstDayOfMonth = new Date(year, month, 1).getDay();
+  const prevMonth = () => setCurrentDate(new Date(year, month - 1, 1)); const nextMonth = () => setCurrentDate(new Date(year, month + 1, 1));
 
   const renderDays = () => {
     const blanks = Array.from({ length: firstDayOfMonth }, (_, i) => <div key={`blank-${i}`} />);
@@ -196,15 +213,7 @@ function EventsPage({ theme, setTheme, currentUser, onJoinActivity }) {
 
       return (
         <div key={dayNum} onClick={() => { if (status !== 'none') setSelectedDay(isSelected ? null : isoString); }} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '48px', cursor: status !== 'none' ? 'pointer' : 'default' }}>
-          <div style={{
-            width: '36px', height: '36px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-            borderRadius: '50%', backgroundColor: (status === 'personal' || status === 'both' || isSelected) ? '#3B82F6' : 'transparent',
-            borderBottom: (status === 'none' && isToday && !isSelected) ? '2px solid #3B82F6' : 'none',
-            color: (status === 'personal' || status === 'both' || isSelected) ? '#ffffff' : (status === 'community' ? 'var(--text-primary)' : '#94A3B8'),
-            fontSize: (status === 'personal' || status === 'both' || isSelected) ? '18px' : (status === 'community' ? '16px' : '14px'),
-            fontWeight: (status === 'personal' || status === 'both' || isSelected) ? 800 : (status === 'community' ? 600 : 400),
-            position: 'relative'
-          }}>
+          <div style={{ width: '36px', height: '36px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', backgroundColor: (status === 'personal' || status === 'both' || isSelected) ? '#3B82F6' : 'transparent', borderBottom: (status === 'none' && isToday && !isSelected) ? '2px solid #3B82F6' : 'none', color: (status === 'personal' || status === 'both' || isSelected) ? '#ffffff' : (status === 'community' ? 'var(--text-primary)' : '#94A3B8'), fontSize: (status === 'personal' || status === 'both' || isSelected) ? '18px' : (status === 'community' ? '16px' : '14px'), fontWeight: (status === 'personal' || status === 'both' || isSelected) ? 800 : (status === 'community' ? 600 : 400), position: 'relative' }}>
             <span style={{ position: 'relative', top: (status === 'community' || status === 'both') ? '-2px' : '0' }}>{dayNum}</span>
             {status === 'both' && <div style={{ width: 4, height: 4, borderRadius: '50%', backgroundColor: '#ffffff', position: 'absolute', bottom: 4 }} />}
             {status === 'community' && !isSelected && <div style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#94A3B8', position: 'absolute', bottom: 4 }} />}
@@ -228,12 +237,8 @@ function EventsPage({ theme, setTheme, currentUser, onJoinActivity }) {
       </div>
 
       <div style={{ display: 'flex', borderBottom: 'var(--border)', position: 'relative' }}>
-        <button onClick={() => { setTab('upcoming'); setSelectedDay(null); }} style={{ flex: 1, padding: '12px 0', background: 'none', border: 'none', color: tab === 'upcoming' ? 'var(--text-primary)' : '#94A3B8', fontWeight: tab === 'upcoming' ? 700 : 400, fontSize: '15px', cursor: 'pointer', borderBottom: tab === 'upcoming' ? '2px solid #3B82F6' : '2px solid transparent', transition: 'all 200ms ease' }}>
-          Upcoming
-        </button>
-        <button onClick={() => { setTab('past'); setSelectedDay(null); }} style={{ flex: 1, padding: '12px 0', background: 'none', border: 'none', color: tab === 'past' ? 'var(--text-primary)' : '#94A3B8', fontWeight: tab === 'past' ? 700 : 400, fontSize: '15px', cursor: 'pointer', borderBottom: tab === 'past' ? '2px solid #3B82F6' : '2px solid transparent', transition: 'all 200ms ease' }}>
-          Past
-        </button>
+        <button onClick={() => { setTab('upcoming'); setSelectedDay(null); }} style={{ flex: 1, padding: '12px 0', background: 'none', border: 'none', color: tab === 'upcoming' ? 'var(--text-primary)' : '#94A3B8', fontWeight: tab === 'upcoming' ? 700 : 400, fontSize: '15px', cursor: 'pointer', borderBottom: tab === 'upcoming' ? '2px solid #3B82F6' : '2px solid transparent', transition: 'all 200ms ease' }}>Upcoming</button>
+        <button onClick={() => { setTab('past'); setSelectedDay(null); }} style={{ flex: 1, padding: '12px 0', background: 'none', border: 'none', color: tab === 'past' ? 'var(--text-primary)' : '#94A3B8', fontWeight: tab === 'past' ? 700 : 400, fontSize: '15px', cursor: 'pointer', borderBottom: tab === 'past' ? '2px solid #3B82F6' : '2px solid transparent', transition: 'all 200ms ease' }}>Past</button>
       </div>
 
       <div style={{ padding: '20px' }}>
@@ -243,15 +248,10 @@ function EventsPage({ theme, setTheme, currentUser, onJoinActivity }) {
             <span style={{ fontSize: '15px', fontWeight: 700 }}>{currentDate.toLocaleString('default', { month: 'long' })} {year}</span>
             <button onClick={nextMonth} style={{ background: 'none', border: 'none', color: '#64748B', cursor: 'pointer' }}><ChevronRight size={20} /></button>
           </div>
-          
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px', textAlign: 'center', marginBottom: '8px' }}>
-            {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
-              <span key={i} style={{ fontSize: '11px', fontWeight: 600, color: '#64748B' }}>{day}</span>
-            ))}
+            {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (<span key={i} style={{ fontSize: '11px', fontWeight: 600, color: '#64748B' }}>{day}</span>))}
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px' }}>
-            {renderDays()}
-          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px' }}>{renderDays()}</div>
         </div>
       </div>
 
@@ -260,69 +260,33 @@ function EventsPage({ theme, setTheme, currentUser, onJoinActivity }) {
       {selectedDay && (personalOnDay.length > 0 || communityOnDay.length > 0) && (
         <div className="page-transition" style={{ padding: '0 20px 20px', display: 'flex', flexDirection: 'column', gap: '24px', overflow: 'hidden' }}>
           
-          {/* GROUP 1: MY ACTIVITIES */}
           {personalOnDay.length > 0 && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <h3 style={{ fontSize: '11px', fontWeight: 600, color: '#3B82F6', textTransform: 'uppercase', borderLeft: '2px solid #3B82F6', paddingLeft: '8px' }}>
-                My Activities
-              </h3>
+              <h3 style={{ fontSize: '11px', fontWeight: 600, color: '#3B82F6', textTransform: 'uppercase', borderLeft: '2px solid #3B82F6', paddingLeft: '8px' }}>My Activities</h3>
               {personalOnDay.map(act => {
                 const isHost = act.role === 'Host';
-                const bgLight = isHost ? '#EFF6FF' : '#F0FDF4';
-                const bgDark = isHost ? '#1E3A5F' : '#1A3A2E';
-                const accent = isHost ? '#3B82F6' : '#10B981';
+                const bgLight = isHost ? '#EFF6FF' : '#F0FDF4'; const bgDark = isHost ? '#1E3A5F' : '#1A3A2E'; const accent = isHost ? '#3B82F6' : '#10B981';
 
                 return (
-                  <div key={act.id} style={{
-                    borderRadius: '16px', backgroundColor: theme === 'dark' ? bgDark : bgLight,
-                    border: 'var(--border)', borderLeft: `4px solid ${accent}`, padding: '16px',
-                    display: 'flex', flexDirection: 'column', gap: '12px'
-                  }}>
+                  <div key={act.id} style={{ borderRadius: '16px', backgroundColor: theme === 'dark' ? bgDark : bgLight, border: 'var(--border)', borderLeft: `4px solid ${accent}`, padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                       <div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
-                          <span style={{ fontSize: '18px' }}>{SPORT_EMOJIS[act.sport] || '🏅'}</span>
-                          <span style={{ fontSize: '15px', fontWeight: 700 }}>{act.sport}</span>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#64748B', fontSize: '13px' }}>
-                          <MapPin size={12} /> {act.venue}
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#64748B', fontSize: '13px', marginTop: '2px' }}>
-                          <Clock size={12} /> {act.start_time} - {act.end_time}
-                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}><span style={{ fontSize: '18px' }}>{SPORT_EMOJIS[act.sport] || '🏅'}</span><span style={{ fontSize: '15px', fontWeight: 700 }}>{act.sport}</span></div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#64748B', fontSize: '13px' }}><MapPin size={12} /> {act.venue}</div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#64748B', fontSize: '13px', marginTop: '2px' }}><Clock size={12} /> {act.start_time} - {act.end_time}</div>
                       </div>
-                      <div style={{
-                        backgroundColor: isHost ? 'rgba(59,130,246,0.15)' : 'rgba(16,185,129,0.15)',
-                        color: accent, borderRadius: '999px', padding: '4px 10px', fontSize: '11px', fontWeight: 700
-                      }}>
-                        {act.role}
-                      </div>
+                      <div style={{ backgroundColor: isHost ? 'rgba(59,130,246,0.15)' : 'rgba(16,185,129,0.15)', color: accent, borderRadius: '999px', padding: '4px 10px', fontSize: '11px', fontWeight: 700 }}>{act.role}</div>
                     </div>
                     <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                      <span style={{ fontSize: '11px', fontWeight: 600, padding: '3px 10px', borderRadius: '999px', backgroundColor: '#EFF6FF', color: '#3B82F6', textTransform: 'uppercase' }}>
-                        {act.difficulty}
-                      </span>
-                      <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
-                        {act.confirmed_players} / {act.total_players} joined
-                      </span>
+                      <span style={{ fontSize: '11px', fontWeight: 600, padding: '3px 10px', borderRadius: '999px', backgroundColor: '#EFF6FF', color: '#3B82F6', textTransform: 'uppercase' }}>{act.difficulty}</span>
+                      <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>{act.confirmed_players} / {act.total_players} joined</span>
                     </div>
-
                     <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
-                      <button style={{
-                        flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
-                        height: '36px', borderRadius: '999px', border: 'var(--border)', backgroundColor: 'var(--card-surface)',
-                        fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', cursor: 'pointer'
-                      }}>
+                      <button onClick={() => onOpenChat(act)} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', height: '36px', borderRadius: '999px', border: 'var(--border)', backgroundColor: 'var(--card-surface)', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', cursor: 'pointer' }}>
                         <MessageCircle size={14} color="#3B82F6" /> Chat
                       </button>
                       {act.isPast && (
-                        <button style={{
-                          flex: 1, height: '36px', borderRadius: '999px', border: 'none',
-                          backgroundColor: '#F59E0B', color: '#ffffff',
-                          fontSize: '13px', fontWeight: 600, cursor: 'pointer'
-                        }}>
-                          Rate Team
-                        </button>
+                        <button style={{ flex: 1, height: '36px', borderRadius: '999px', border: 'none', backgroundColor: '#F59E0B', color: '#ffffff', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>Rate Team</button>
                       )}
                     </div>
                   </div>
@@ -331,54 +295,35 @@ function EventsPage({ theme, setTheme, currentUser, onJoinActivity }) {
             </div>
           )}
 
-          {/* GROUP 2: ALSO HAPPENING */}
           {communityOnDay.length > 0 && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <h3 style={{ fontSize: '11px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase', borderLeft: '2px solid #334155', paddingLeft: '8px' }}>
-                Also Happening
-              </h3>
+              <h3 style={{ fontSize: '11px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase', borderLeft: '2px solid #334155', paddingLeft: '8px' }}>Also Happening</h3>
               {communityOnDay.map((act) => {
                 const slotsLeft = act.total_players - act.confirmed_players;
                 return (
                   <div key={act.id} style={{ borderRadius: '16px', backgroundColor: 'var(--card-surface)', boxShadow: '0 1px 3px rgba(0,0,0,0.06)', border: 'var(--border)', borderLeft: `4px solid ${SPORT_COLORS[act.sport] || '#3B82F6'}`, padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <span style={{ fontSize: '20px' }}>{SPORT_EMOJIS[act.sport] || '🏅'}</span>
-                        <span style={{ fontSize: '15px', fontWeight: 700 }}>{act.sport}</span>
-                      </div>
-                      <div style={{ backgroundColor: slotsLeft <= 2 ? '#FEF2F2' : slotsLeft <= 5 ? '#FFFBEB' : '#F0FDF4', color: slotsLeft <= 2 ? '#EF4444' : slotsLeft <= 5 ? '#F59E0B' : '#10B981', borderRadius: '999px', padding: '4px 10px', fontSize: '11px', fontWeight: 600 }}>
-                        {slotsLeft} slots left
-                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><span style={{ fontSize: '20px' }}>{SPORT_EMOJIS[act.sport] || '🏅'}</span><span style={{ fontSize: '15px', fontWeight: 700 }}>{act.sport}</span></div>
+                      <div style={{ backgroundColor: slotsLeft <= 2 ? '#FEF2F2' : slotsLeft <= 5 ? '#FFFBEB' : '#F0FDF4', color: slotsLeft <= 2 ? '#EF4444' : slotsLeft <= 5 ? '#F59E0B' : '#10B981', borderRadius: '999px', padding: '4px 10px', fontSize: '11px', fontWeight: 600 }}>{slotsLeft} slots left</div>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748B' }}>
-                      <MapPin size={14} /><span style={{ fontSize: '14px' }}>{act.venue}</span>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748B' }}>
-                      <Clock size={14} /><span style={{ fontSize: '14px' }}>{act.start_time} - {act.end_time}</span>
-                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748B' }}><MapPin size={14} /><span style={{ fontSize: '14px' }}>{act.venue}</span></div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748B' }}><Clock size={14} /><span style={{ fontSize: '14px' }}>{act.start_time} - {act.end_time}</span></div>
                     <div style={{ display: 'flex', gap: '12px', marginTop: '4px', alignItems: 'center' }}>
-                      <span style={{ fontSize: '11px', fontWeight: 600, padding: '3px 10px', borderRadius: '999px', backgroundColor: '#EFF6FF', color: '#3B82F6', textTransform: 'uppercase' }}>
-                        {act.difficulty}
-                      </span>
+                      <span style={{ fontSize: '11px', fontWeight: 600, padding: '3px 10px', borderRadius: '999px', backgroundColor: '#EFF6FF', color: '#3B82F6', textTransform: 'uppercase' }}>{act.difficulty}</span>
                       <span style={{ fontSize: '13px', fontWeight: 600 }}>SGD {parseFloat(act.fee).toFixed(2)} / person</span>
                     </div>
-                    <button onClick={() => onJoinActivity(act)} style={{ marginTop: '8px', background: 'transparent', border: '1.5px solid #3B82F6', color: '#3B82F6', borderRadius: '999px', height: '40px', fontSize: '13px', fontWeight: 600, width: '100%', cursor: 'pointer' }}>
-                      Join Activity →
-                    </button>
+                    <button onClick={() => onJoinActivity(act)} style={{ marginTop: '8px', background: 'transparent', border: '1.5px solid #3B82F6', color: '#3B82F6', borderRadius: '999px', height: '40px', fontSize: '13px', fontWeight: 600, width: '100%', cursor: 'pointer' }}>Join Activity →</button>
                   </div>
                 );
               })}
             </div>
           )}
-
         </div>
       )}
     </div>
   );
 }
 
-
-// --- SOCIAL FEED FLOW ---
 function SocialPage({ theme, setTheme }) {
   const [tab, setTab] = useState('foryou');
   const [likedPosts, setLikedPosts] = useState({});
@@ -400,9 +345,7 @@ function SocialPage({ theme, setTheme }) {
     <div className="page-transition" style={{ paddingBottom: '80px', minHeight: '100vh' }}>
       <div style={{ position: 'sticky', top: 0, backgroundColor: 'var(--bg-page)', borderBottom: 'var(--border)', padding: '16px 20px', zIndex: 40, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h1 style={{ fontSize: '20px', fontWeight: 800 }}>Community</h1>
-        <button onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
-          {theme === 'dark' ? <Sun size={22} color="#64748B" /> : <Moon size={22} color="#64748B" />}
-        </button>
+        <button onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><Sun size={22} color="#64748B" /></button>
       </div>
       <div style={{ display: 'flex', borderBottom: 'var(--border)', position: 'relative' }}>
         <button onClick={() => setTab('foryou')} style={{ flex: 1, padding: '12px 0', background: 'none', border: 'none', color: tab === 'foryou' ? 'var(--text-primary)' : '#94A3B8', fontWeight: tab === 'foryou' ? 700 : 400, fontSize: '15px', cursor: 'pointer', borderBottom: tab === 'foryou' ? '2px solid #3B82F6' : '2px solid transparent', transition: 'all 200ms ease' }}>For You</button>
@@ -421,20 +364,16 @@ function SocialPage({ theme, setTheme }) {
               <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
                 <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'linear-gradient(135deg, #3B82F6, #1E3A5F)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', marginRight: '12px' }}><User size={20} /></div>
                 <div style={{ flex: 1 }}>
-                  <span style={{ fontSize: '14px', fontWeight: 700 }}>{post.user}</span>
-                  <span style={{ fontSize: '13px', color: '#94A3B8' }}> · {post.time}</span>
+                  <span style={{ fontSize: '14px', fontWeight: 700 }}>{post.user}</span><span style={{ fontSize: '13px', color: '#94A3B8' }}> · {post.time}</span>
                 </div>
                 <button onClick={() => handleFollow(post.user)} style={{ padding: '4px 12px', borderRadius: '999px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', transition: 'all 150ms ease', border: followingUsers[post.user] ? 'none' : '1px solid #3B82F6', backgroundColor: followingUsers[post.user] ? '#1E3A5F' : 'transparent', color: '#3B82F6' }}>
                   {followingUsers[post.user] ? 'Following' : 'Follow'}
                 </button>
               </div>
-              <div style={{ fontSize: '14px', color: 'var(--text-primary)', marginBottom: post.activity ? '12px' : '16px' }}>
-                <span style={{ fontWeight: 600 }}>{post.user}</span> {post.text}
-              </div>
+              <div style={{ fontSize: '14px', color: 'var(--text-primary)', marginBottom: post.activity ? '12px' : '16px' }}><span style={{ fontWeight: 600 }}>{post.user}</span> {post.text}</div>
               {post.activity && (
                 <div style={{ backgroundColor: 'var(--input-bg)', borderRadius: '8px', padding: '6px 12px', display: 'inline-flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-                  <span style={{ fontSize: '14px' }}>{SPORT_EMOJIS[post.activity.sport]}</span>
-                  <span style={{ fontSize: '12px', color: '#64748B' }}>{post.activity.venue} · {post.activity.date}</span>
+                  <span style={{ fontSize: '14px' }}>{SPORT_EMOJIS[post.activity.sport]}</span><span style={{ fontSize: '12px', color: '#64748B' }}>{post.activity.venue} · {post.activity.date}</span>
                 </div>
               )}
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748B' }}>
@@ -451,8 +390,6 @@ function SocialPage({ theme, setTheme }) {
   );
 }
 
-
-// --- EXPLORE & BOOKING FLOW ---
 function ExplorePage({ onSelectActivity }) {
   const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -467,7 +404,13 @@ function ExplorePage({ onSelectActivity }) {
     if (selectedDate) query = query.eq('date', selectedDate);
     if (sportFilter !== 'All Sports') query = query.eq('sport', sportFilter);
     const { data } = await query;
-    setActivities(data || []);
+
+    // Inject Mock Activities and filter them just like real ones
+    let mocks = getMockActivities();
+    if (selectedDate) mocks = mocks.filter(m => m.date === selectedDate);
+    if (sportFilter !== 'All Sports') mocks = mocks.filter(m => m.sport === sportFilter);
+
+    setActivities([...(data || []), ...mocks].sort((a,b) => a.start_time.localeCompare(b.start_time)));
     setLoading(false);
   };
 
@@ -526,7 +469,7 @@ function ExplorePage({ onSelectActivity }) {
                     <div style={{ backgroundColor: slotsLeft <= 2 ? '#FEF2F2' : slotsLeft <= 5 ? '#FFFBEB' : '#F0FDF4', color: slotsLeft <= 2 ? '#EF4444' : slotsLeft <= 5 ? '#F59E0B' : '#10B981', borderRadius: '999px', padding: '4px 10px', fontSize: '11px', fontWeight: 600 }}>{slotsLeft} slots left</div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748B' }}><MapPin size={14} /><span style={{ fontSize: '14px' }}>{act.venue}</span></div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748B' }}><Clock size={14} /><span style={{ fontSize: '14px' }}>{act.date} · {act.start_time} - {act.end_time}</span></div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748B' }}><Clock size={14} /><span style={{ fontSize: '14px' }}>{act.start_time} - {act.end_time}</span></div>
                   <div style={{ display: 'flex', gap: '12px', marginTop: '4px', alignItems: 'center' }}>
                     <span style={{ fontSize: '11px', fontWeight: 600, padding: '3px 10px', borderRadius: '999px', backgroundColor: '#EFF6FF', color: '#3B82F6', textTransform: 'uppercase' }}>{act.difficulty}</span>
                     <span style={{ fontSize: '13px', fontWeight: 600 }}>SGD {parseFloat(act.fee).toFixed(2)} / person</span>
@@ -567,8 +510,11 @@ function ActivityDetailPage({ activity, onBack, onProceedToPlayers }) {
 }
 
 function PlayersPage({ activity, onBack, onProceedToPayment }) {
-  const DUMMY_NAMES = ["Alex Tan", "Jordan Lee", "Taylor Wong", "Morgan Chen", "Casey Lim", "Riley Goh", "Jamie Ng", "Cameron Teo", "Sam Ong", "Drew Chua", "Jesse Koh", "Avery Yeo", "Logan Tay", "Hunter Ho", "Quinn Low", "Skyler Toh", "Rowan Sim", "Reese Chia", "Blake Liew", "Dylan Seah"];
-  const dummyPlayers = DUMMY_NAMES.slice(0, activity?.confirmed_players || 0);
+  let baseNames = ["Jordan Lee", "Taylor Wong", "Morgan Chen", "Casey Lim", "Riley Goh", "Jamie Ng", "Cameron Teo", "Sam Ong", "Drew Chua", "Jesse Koh"];
+  if (activity.isMock && activity.host_name) baseNames.unshift(activity.host_name);
+  else baseNames.unshift("Alex Tan");
+
+  const dummyPlayers = baseNames.slice(0, activity?.confirmed_players || 0);
 
   return (
     <div className="page-transition" style={{ minHeight: '100vh', padding: '20px', display: 'flex', flexDirection: 'column', paddingBottom: '90px' }}>
@@ -585,9 +531,6 @@ function PlayersPage({ activity, onBack, onProceedToPayment }) {
             <span style={{ fontSize: '13px', color: '#F59E0B', fontWeight: 600 }}>⚡ {Math.floor(Math.random() * 20) + 70}</span>
           </div>
         ))}
-        {dummyPlayers.length === 0 && (
-          <div style={{ gridColumn: 'span 2', textAlign: 'center', padding: '40px 0', color: '#64748B' }}><Users size={48} color="#334155" style={{ margin: '0 auto 16px auto' }} /><p style={{ fontSize: '15px', fontWeight: 600 }}>Be the first to join!</p></div>
-        )}
       </div>
       <div style={{ position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: '430px', padding: '16px 20px', backgroundColor: 'var(--card-surface)', borderTop: 'var(--border)', zIndex: 50 }}>
         <button onClick={onProceedToPayment} className="btn-primary">Confirm My Slot</button>
@@ -596,12 +539,21 @@ function PlayersPage({ activity, onBack, onProceedToPayment }) {
   );
 }
 
-function PaymentPage({ activity, currentUser, onBack, onSuccess }) {
+function PaymentPage({ activity, currentUser, onBack, onSuccess, setJoinedMocks }) {
   const [method, setMethod] = useState('card');
   const [loading, setLoading] = useState(false);
 
   const handlePay = async () => {
     setLoading(true);
+
+    // Mock Interceptor: Bypass Supabase entirely and simulate success locally
+    if (activity.isMock) {
+      setJoinedMocks(prev => [...prev, activity.id]);
+      onSuccess();
+      setLoading(false);
+      return;
+    }
+
     const { error } = await supabase.from('bookings').insert({ activity_id: activity.id, user_id: currentUser.id });
     if (!error) {
       await supabase.from('activities').update({ confirmed_players: activity.confirmed_players + 1 }).eq('id', activity.id);
@@ -641,6 +593,7 @@ function PaymentPage({ activity, currentUser, onBack, onSuccess }) {
   );
 }
 
+// --- HOST, HOME & APP SHELL ---
 function HostPage({ currentUser, defaultSport, setView }) {
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -665,8 +618,7 @@ function HostPage({ currentUser, defaultSport, setView }) {
 
   const handleStartTimeFocus = () => {
     if (!startTime) {
-      const now = new Date();
-      now.setHours(now.getHours() + 1, 0, 0, 0);
+      const now = new Date(); now.setHours(now.getHours() + 1, 0, 0, 0);
       setStartTime(`${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`);
     }
   };
@@ -675,12 +627,10 @@ function HostPage({ currentUser, defaultSport, setView }) {
     if (!endTime) {
       if (startTime) {
         const [h, m] = startTime.split(':').map(Number);
-        const endD = new Date();
-        endD.setHours(h + 1, m, 0, 0);
+        const endD = new Date(); endD.setHours(h + 1, m, 0, 0);
         setEndTime(`${String(endD.getHours()).padStart(2, '0')}:${String(endD.getMinutes()).padStart(2, '0')}`);
       } else {
-        const now = new Date();
-        now.setHours(now.getHours() + 2, 0, 0, 0);
+        const now = new Date(); now.setHours(now.getHours() + 2, 0, 0, 0);
         setEndTime(`${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`);
       }
     }
@@ -691,8 +641,7 @@ function HostPage({ currentUser, defaultSport, setView }) {
     const { data: activityData, error: activityError } = await supabase.from('activities').insert({ host_id: currentUser.id, sport, venue: finalVenue, date, start_time: startTime, end_time: endTime, total_players: parseInt(totalPlayers), confirmed_players: parseInt(confirmedPlayers), difficulty, fee: parseFloat(fee), description }).select().single();
     if (!activityError && activityData) { 
       await supabase.from('chats').insert({ activity_id: activityData.id }); 
-      setStep(3); 
-      setShowShareModal(true);
+      setStep(3); setShowShareModal(true);
     }
     setIsSubmitting(false);
   };
@@ -811,6 +760,7 @@ export default function Home() {
   const [selectedActivity, setSelectedActivity] = useState(null);
   const [subView, setSubView] = useState('list');
   const [showShareModal, setShowShareModal] = useState(false);
+  const [joinedMocks, setJoinedMocks] = useState([]);
   
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -859,16 +809,11 @@ export default function Home() {
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
       
-      {/* GLOBAL STYLESHEET INJECTION FOR FIX 5 & FIX 4 TWEAKS */}
       <style dangerouslySetInnerHTML={{__html: `
         [data-theme='dark'] input[type="date"]::-webkit-calendar-picker-indicator,
-        [data-theme='dark'] input[type="time"]::-webkit-calendar-picker-indicator {
-          filter: invert(1);
-        }
+        [data-theme='dark'] input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(1); }
         [data-theme='light'] input[type="date"]::-webkit-calendar-picker-indicator,
-        [data-theme='light'] input[type="time"]::-webkit-calendar-picker-indicator {
-          filter: invert(47%) sepia(11%) saturate(760%) hue-rotate(184deg) brightness(94%) contrast(86%);
-        }
+        [data-theme='light'] input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(47%) sepia(11%) saturate(760%) hue-rotate(184deg) brightness(94%) contrast(86%); }
         select.input-field::-ms-expand { display: none; }
       `}} />
 
@@ -904,23 +849,25 @@ export default function Home() {
           {view === 'host' && <HostPage currentUser={currentUser} defaultSport={hostDefaultSport} setView={setView} />}
           {view === 'social' && <SocialPage theme={theme} setTheme={setTheme} />}
           {view === 'events' && (
-            <EventsPage 
-              theme={theme} 
-              setTheme={setTheme} 
-              currentUser={currentUser} 
-              onJoinActivity={(act) => {
-                setSelectedActivity(act);
-                setSubView('detail');
-                setView('explore');
-              }} 
-            />
+            <>
+              {subView === 'list' && (
+                <EventsPage 
+                  theme={theme} setTheme={setTheme} currentUser={currentUser} joinedMocks={joinedMocks}
+                  onJoinActivity={(act) => { setSelectedActivity(act); setSubView('detail'); setView('explore'); }}
+                  onOpenChat={(act) => { setSelectedActivity(act); setSubView('chat'); }}
+                />
+              )}
+              {subView === 'chat' && selectedActivity && (
+                <ChatPage activity={selectedActivity} currentUser={currentUser} onBack={() => setSubView('list')} />
+              )}
+            </>
           )}
           {view === 'explore' && (
             <>
-              {subView === 'list' && <ExplorePage onSelectActivity={(act) => { setSelectedActivity(act); setSubView('detail'); }} />}
+              {subView === 'list' && <ExplorePage onSelectActivity={(act) => { setSelectedActivity(act); setSubView('detail'); }} joinedMocks={joinedMocks} />}
               {subView === 'detail' && selectedActivity && <ActivityDetailPage activity={selectedActivity} onBack={() => setSubView('list')} onProceedToPlayers={() => setSubView('players')} />}
               {subView === 'players' && selectedActivity && <PlayersPage activity={selectedActivity} onBack={() => setSubView('detail')} onProceedToPayment={() => setSubView('payment')} />}
-              {subView === 'payment' && selectedActivity && <PaymentPage activity={selectedActivity} currentUser={currentUser} onBack={() => setSubView('players')} onSuccess={() => { setSubView('booking_success'); setShowShareModal(true); }} />}
+              {subView === 'payment' && selectedActivity && <PaymentPage activity={selectedActivity} currentUser={currentUser} setJoinedMocks={setJoinedMocks} onBack={() => setSubView('players')} onSuccess={() => { setSubView('booking_success'); setShowShareModal(true); }} />}
               {subView === 'booking_success' && (
                 <div className="page-transition" style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '20px', textAlign: 'center', minHeight: '100vh' }}>
                   <CheckCircle2 size={64} color="#10B981" style={{ marginBottom: '24px' }} />
