@@ -106,7 +106,7 @@ function SettingsPage({ theme, setTheme, setSubView, currentUser, displayName, a
   );
 
   return (
-    <div className="page-transition" style={{ paddingBottom: '80px', minHeight: '100vh', padding: '20px' }}>
+    <div className="page-transition" style={{ minHeight: '100vh', padding: '20px 20px 100px 20px' }}>
       <h1 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '24px' }}>Settings</h1>
       
       <div style={{ backgroundColor: 'var(--card-surface)', borderRadius: '16px', border: 'var(--border)', padding: '16px', display: 'flex', alignItems: 'center', marginBottom: '24px' }}>
