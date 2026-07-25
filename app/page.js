@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../utils/supabase';
 import { 
-  Zap, Bell, Eye, EyeOff, ChevronLeft, ChevronRight, User, Camera, Check, Sun, Moon, 
+  Zap, Bell, Eye, EyeOff, ChevronLeft, ChevronRight, ChevronDown, User, Camera, Check, Sun, Moon, 
   MapPin, Clock, Plus, Search, Globe, Calendar as CalendarIcon, Settings,
   CheckCircle, CheckCircle2, Users, BarChart2, CreditCard, AlignLeft, SearchX, Smartphone, Heart,
   MessageCircle
@@ -128,45 +128,62 @@ const SPORT_GRADIENTS = {
 
 // --- EVENTS & CALENDAR FLOW ---
 
-function EventsPage({ theme, setTheme }) {
-  const [tab, setTab] = useState('upcoming'); // 'upcoming' | 'past'
+function EventsPage({ theme, setTheme, currentUser, onJoinActivity }) {
+  const [tab, setTab] = useState('upcoming');
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDay, setSelectedDay] = useState(null);
+  const [activities, setActivities] = useState([]);
+  const [myBookings, setMyBookings] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  // Generate dynamic mock data based on today so the calendar is always populated for the prototype
-  const today = new Date();
-  const ymd = (d) => { const nd = new Date(d); return `${nd.getFullYear()}-${String(nd.getMonth()+1).padStart(2, '0')}-${String(nd.getDate()).padStart(2, '0')}`; };
-  
-  const MOCK_EVENTS = [
-    { id: 1, sport: 'Badminton', venue: 'MPSH 1', date: ymd(today.setDate(today.getDate() + 2)), time: '6:00 PM – 8:00 PM', role: 'Host', isPast: false },
-    { id: 2, sport: 'Football', venue: 'Kent Ridge Paddock', date: ymd(today.setDate(today.getDate() + 3)), time: '8:00 PM – 10:00 PM', role: 'Player', isPast: false },
-    { id: 3, sport: 'Basketball', venue: 'UTown Sports Hall', date: ymd(today), time: '10:00 AM – 12:00 PM', role: 'Host', isPast: false }, // Same day test
-    { id: 4, sport: 'Tennis', venue: 'University Cultural Centre', date: ymd(today.setDate(today.getDate() - 8)), time: '4:00 PM – 6:00 PM', role: 'Player', isPast: true, rated: false },
-    { id: 5, sport: 'Swimming', venue: 'USC Pool', date: ymd(today.setDate(today.getDate() - 14)), time: '7:00 AM – 9:00 AM', role: 'Player', isPast: true, rated: true },
-  ];
-  // Reset today back to actual today
+  useEffect(() => {
+    fetchEvents();
+  }, [tab]); // refetch seamlessly
+
+  const fetchEvents = async () => {
+    setLoading(true);
+    const { data: acts } = await supabase.from('activities').select('*');
+    const { data: bks } = await supabase.from('bookings').select('activity_id').eq('user_id', currentUser.id);
+    setActivities(acts || []);
+    setMyBookings(bks ? bks.map(b => b.activity_id) : []);
+    setLoading(false);
+  };
+
   const actualTodayIso = new Date().toISOString().split('T')[0];
-
-  const filteredEvents = MOCK_EVENTS.filter(e => tab === 'upcoming' ? !e.isPast : e.isPast);
+  const now = new Date();
   
-  // Calendar Logic
+  const personal = [];
+  const community = [];
+
+  activities.forEach(act => {
+    const actDate = new Date(`${act.date}T${act.start_time}`);
+    const isPast = actDate < now;
+    const isHost = act.host_id === currentUser.id;
+    const isPlayer = myBookings.includes(act.id);
+    
+    if (isHost || isPlayer) {
+      personal.push({ ...act, isPast, role: isHost ? 'Host' : 'Player' });
+    } else {
+      community.push({ ...act, isPast });
+    }
+  });
+
+  const getDayStatus = (isoString) => {
+    const pOnDay = personal.filter(e => e.date === isoString && (tab === 'upcoming' ? !e.isPast : e.isPast));
+    const cOnDay = community.filter(e => e.date === isoString && (tab === 'upcoming' ? !e.isPast : e.isPast));
+    
+    if (pOnDay.length > 0 && cOnDay.length > 0) return 'both';
+    if (pOnDay.length > 0) return 'personal';
+    if (cOnDay.length > 0) return 'community';
+    return 'none';
+  };
+
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const firstDayOfMonth = new Date(year, month, 1).getDay();
-
   const prevMonth = () => setCurrentDate(new Date(year, month - 1, 1));
   const nextMonth = () => setCurrentDate(new Date(year, month + 1, 1));
-
-  const getDayStatus = (isoString) => {
-    const eventsOnDay = filteredEvents.filter(e => e.date === isoString);
-    if (eventsOnDay.length === 0) return 'none';
-    const isHosting = eventsOnDay.some(e => e.role === 'Host');
-    const isPlaying = eventsOnDay.some(e => e.role === 'Player');
-    if (isHosting && isPlaying) return 'both';
-    if (isHosting) return 'host';
-    return 'player';
-  };
 
   const renderDays = () => {
     const blanks = Array.from({ length: firstDayOfMonth }, (_, i) => <div key={`blank-${i}`} />);
@@ -177,24 +194,20 @@ function EventsPage({ theme, setTheme }) {
       const isSelected = selectedDay === isoString;
       const isToday = isoString === actualTodayIso;
 
-      let textStyle = { fontSize: '14px', fontWeight: 400, color: '#94A3B8' };
-      if (status === 'host') textStyle = { fontSize: '18px', fontWeight: 800, color: '#3B82F6' };
-      else if (status === 'player') textStyle = { fontSize: '18px', fontWeight: 800, color: '#10B981' };
-      else if (status === 'both') textStyle = { fontSize: '18px', fontWeight: 800, background: 'linear-gradient(to right, #3B82F6 50%, #10B981 50%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' };
-
-      if (isSelected) {
-        textStyle = { fontSize: '18px', fontWeight: 800, color: '#ffffff', background: 'none', WebkitTextFillColor: 'initial' };
-      }
-
       return (
-        <div key={dayNum} onClick={() => { if (status !== 'none') setSelectedDay(isSelected ? null : isoString); }} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '40px', cursor: status !== 'none' ? 'pointer' : 'default' }}>
+        <div key={dayNum} onClick={() => { if (status !== 'none') setSelectedDay(isSelected ? null : isoString); }} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '48px', cursor: status !== 'none' ? 'pointer' : 'default' }}>
           <div style={{
-            width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            borderRadius: '50%', backgroundColor: isSelected ? '#3B82F6' : 'transparent',
-            borderBottom: isToday && !isSelected && status === 'none' ? '2px solid #3B82F6' : 'none',
-            transition: 'all 150ms ease'
+            width: '36px', height: '36px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+            borderRadius: '50%', backgroundColor: (status === 'personal' || status === 'both' || isSelected) ? '#3B82F6' : 'transparent',
+            borderBottom: (status === 'none' && isToday && !isSelected) ? '2px solid #3B82F6' : 'none',
+            color: (status === 'personal' || status === 'both' || isSelected) ? '#ffffff' : (status === 'community' ? 'var(--text-primary)' : '#94A3B8'),
+            fontSize: (status === 'personal' || status === 'both' || isSelected) ? '18px' : (status === 'community' ? '16px' : '14px'),
+            fontWeight: (status === 'personal' || status === 'both' || isSelected) ? 800 : (status === 'community' ? 600 : 400),
+            position: 'relative'
           }}>
-            <span style={textStyle}>{dayNum}</span>
+            <span style={{ position: 'relative', top: (status === 'community' || status === 'both') ? '-2px' : '0' }}>{dayNum}</span>
+            {status === 'both' && <div style={{ width: 4, height: 4, borderRadius: '50%', backgroundColor: '#ffffff', position: 'absolute', bottom: 4 }} />}
+            {status === 'community' && !isSelected && <div style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#94A3B8', position: 'absolute', bottom: 4 }} />}
           </div>
         </div>
       );
@@ -202,7 +215,8 @@ function EventsPage({ theme, setTheme }) {
     return [...blanks, ...days];
   };
 
-  const selectedDayEvents = selectedDay ? filteredEvents.filter(e => e.date === selectedDay) : [];
+  const personalOnDay = selectedDay ? personal.filter(e => e.date === selectedDay && (tab === 'upcoming' ? !e.isPast : e.isPast)) : [];
+  const communityOnDay = selectedDay ? community.filter(e => e.date === selectedDay && (tab === 'upcoming' ? !e.isPast : e.isPast)) : [];
 
   return (
     <div className="page-transition" style={{ paddingBottom: '80px', minHeight: '100vh' }}>
@@ -241,70 +255,123 @@ function EventsPage({ theme, setTheme }) {
         </div>
       </div>
 
-      {selectedDay && selectedDayEvents.length > 0 && (
-        <div className="page-transition" style={{ padding: '0 20px 20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          <h3 style={{ fontSize: '14px', fontWeight: 700, color: '#64748B', marginBottom: '4px' }}>
-            {new Date(selectedDay).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
-          </h3>
-          {selectedDayEvents.map(act => {
-            const isHost = act.role === 'Host';
-            const bgLight = isHost ? '#EFF6FF' : '#F0FDF4';
-            const bgDark = isHost ? '#1E3A5F' : '#1A3A2E';
-            const accent = isHost ? '#3B82F6' : '#10B981';
+      {loading && <p style={{ textAlign: 'center', color: '#64748B' }}>Syncing events...</p>}
 
-            return (
-              <div key={act.id} style={{
-                borderRadius: '16px', backgroundColor: theme === 'dark' ? bgDark : bgLight,
-                border: 'var(--border)', borderLeft: `4px solid ${accent}`, padding: '16px',
-                display: 'flex', flexDirection: 'column', gap: '12px'
-              }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
-                      <span style={{ fontSize: '18px' }}>{SPORT_EMOJIS[act.sport]}</span>
-                      <span style={{ fontSize: '15px', fontWeight: 700 }}>{act.sport}</span>
+      {selectedDay && (personalOnDay.length > 0 || communityOnDay.length > 0) && (
+        <div className="page-transition" style={{ padding: '0 20px 20px', display: 'flex', flexDirection: 'column', gap: '24px', overflow: 'hidden' }}>
+          
+          {/* GROUP 1: MY ACTIVITIES */}
+          {personalOnDay.length > 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <h3 style={{ fontSize: '11px', fontWeight: 600, color: '#3B82F6', textTransform: 'uppercase', borderLeft: '2px solid #3B82F6', paddingLeft: '8px' }}>
+                My Activities
+              </h3>
+              {personalOnDay.map(act => {
+                const isHost = act.role === 'Host';
+                const bgLight = isHost ? '#EFF6FF' : '#F0FDF4';
+                const bgDark = isHost ? '#1E3A5F' : '#1A3A2E';
+                const accent = isHost ? '#3B82F6' : '#10B981';
+
+                return (
+                  <div key={act.id} style={{
+                    borderRadius: '16px', backgroundColor: theme === 'dark' ? bgDark : bgLight,
+                    border: 'var(--border)', borderLeft: `4px solid ${accent}`, padding: '16px',
+                    display: 'flex', flexDirection: 'column', gap: '12px'
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+                          <span style={{ fontSize: '18px' }}>{SPORT_EMOJIS[act.sport] || '🏅'}</span>
+                          <span style={{ fontSize: '15px', fontWeight: 700 }}>{act.sport}</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#64748B', fontSize: '13px' }}>
+                          <MapPin size={12} /> {act.venue}
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#64748B', fontSize: '13px', marginTop: '2px' }}>
+                          <Clock size={12} /> {act.start_time} - {act.end_time}
+                        </div>
+                      </div>
+                      <div style={{
+                        backgroundColor: isHost ? 'rgba(59,130,246,0.15)' : 'rgba(16,185,129,0.15)',
+                        color: accent, borderRadius: '999px', padding: '4px 10px', fontSize: '11px', fontWeight: 700
+                      }}>
+                        {act.role}
+                      </div>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#64748B', fontSize: '13px' }}>
-                      <MapPin size={12} /> {act.venue}
+                    <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                      <span style={{ fontSize: '11px', fontWeight: 600, padding: '3px 10px', borderRadius: '999px', backgroundColor: '#EFF6FF', color: '#3B82F6', textTransform: 'uppercase' }}>
+                        {act.difficulty}
+                      </span>
+                      <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                        {act.confirmed_players} / {act.total_players} joined
+                      </span>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#64748B', fontSize: '13px', marginTop: '2px' }}>
-                      <Clock size={12} /> {act.time}
+
+                    <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+                      <button style={{
+                        flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                        height: '36px', borderRadius: '999px', border: 'var(--border)', backgroundColor: 'var(--card-surface)',
+                        fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', cursor: 'pointer'
+                      }}>
+                        <MessageCircle size={14} color="#3B82F6" /> Chat
+                      </button>
+                      {act.isPast && (
+                        <button style={{
+                          flex: 1, height: '36px', borderRadius: '999px', border: 'none',
+                          backgroundColor: '#F59E0B', color: '#ffffff',
+                          fontSize: '13px', fontWeight: 600, cursor: 'pointer'
+                        }}>
+                          Rate Team
+                        </button>
+                      )}
                     </div>
                   </div>
-                  <div style={{
-                    backgroundColor: isHost ? 'rgba(59,130,246,0.15)' : 'rgba(16,185,129,0.15)',
-                    color: accent, borderRadius: '999px', padding: '4px 10px', fontSize: '11px', fontWeight: 700
-                  }}>
-                    {act.role}
-                  </div>
-                </div>
+                );
+              })}
+            </div>
+          )}
 
-                <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
-                  <button style={{
-                    flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
-                    height: '36px', borderRadius: '999px', border: 'var(--border)', backgroundColor: 'var(--card-surface)',
-                    fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', cursor: 'pointer'
-                  }}>
-                    <MessageCircle size={14} color="#3B82F6" /> Chat
-                  </button>
-                  {act.isPast && (
-                    <button style={{
-                      flex: 1, height: '36px', borderRadius: '999px', border: act.rated ? 'var(--border)' : 'none',
-                      backgroundColor: act.rated ? 'transparent' : '#F59E0B', color: act.rated ? '#94A3B8' : '#ffffff',
-                      fontSize: '13px', fontWeight: 600, cursor: act.rated ? 'default' : 'pointer'
-                    }}>
-                      {act.rated ? 'Rated ✓' : 'Rate Team'}
+          {/* GROUP 2: ALSO HAPPENING */}
+          {communityOnDay.length > 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <h3 style={{ fontSize: '11px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase', borderLeft: '2px solid #334155', paddingLeft: '8px' }}>
+                Also Happening
+              </h3>
+              {communityOnDay.map((act) => {
+                const slotsLeft = act.total_players - act.confirmed_players;
+                return (
+                  <div key={act.id} style={{ borderRadius: '16px', backgroundColor: 'var(--card-surface)', boxShadow: '0 1px 3px rgba(0,0,0,0.06)', border: 'var(--border)', borderLeft: `4px solid ${SPORT_COLORS[act.sport] || '#3B82F6'}`, padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span style={{ fontSize: '20px' }}>{SPORT_EMOJIS[act.sport] || '🏅'}</span>
+                        <span style={{ fontSize: '15px', fontWeight: 700 }}>{act.sport}</span>
+                      </div>
+                      <div style={{ backgroundColor: slotsLeft <= 2 ? '#FEF2F2' : slotsLeft <= 5 ? '#FFFBEB' : '#F0FDF4', color: slotsLeft <= 2 ? '#EF4444' : slotsLeft <= 5 ? '#F59E0B' : '#10B981', borderRadius: '999px', padding: '4px 10px', fontSize: '11px', fontWeight: 600 }}>
+                        {slotsLeft} slots left
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748B' }}>
+                      <MapPin size={14} /><span style={{ fontSize: '14px' }}>{act.venue}</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748B' }}>
+                      <Clock size={14} /><span style={{ fontSize: '14px' }}>{act.start_time} - {act.end_time}</span>
+                    </div>
+                    <div style={{ display: 'flex', gap: '12px', marginTop: '4px', alignItems: 'center' }}>
+                      <span style={{ fontSize: '11px', fontWeight: 600, padding: '3px 10px', borderRadius: '999px', backgroundColor: '#EFF6FF', color: '#3B82F6', textTransform: 'uppercase' }}>
+                        {act.difficulty}
+                      </span>
+                      <span style={{ fontSize: '13px', fontWeight: 600 }}>SGD {parseFloat(act.fee).toFixed(2)} / person</span>
+                    </div>
+                    <button onClick={() => onJoinActivity(act)} style={{ marginTop: '8px', background: 'transparent', border: '1.5px solid #3B82F6', color: '#3B82F6', borderRadius: '999px', height: '40px', fontSize: '13px', fontWeight: 600, width: '100%', cursor: 'pointer' }}>
+                      Join Activity →
                     </button>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
 
-      {selectedDay && selectedDayEvents.length === 0 && (
-        <p style={{ textAlign: 'center', color: '#94A3B8', fontSize: '14px', padding: '20px' }}>No events on this date.</p>
+        </div>
       )}
     </div>
   );
@@ -432,10 +499,13 @@ function ExplorePage({ onSelectActivity }) {
       </div>
       <div style={{ padding: '12px 0', borderBottom: 'var(--border)' }}>
         <HStack style={{ padding: '0 20px', gap: '8px' }}>
-          <select value={sportFilter} onChange={(e) => setSportFilter(e.target.value)} style={{ height: '34px', borderRadius: '999px', padding: '0 14px', fontSize: '13px', fontWeight: 500, backgroundColor: sportFilter !== 'All Sports' ? '#3B82F6' : 'var(--card-surface)', color: sportFilter !== 'All Sports' ? '#ffffff' : '#94A3B8', border: 'var(--border)', outline: 'none' }}>
-            <option value="All Sports">All Sports</option>
-            {GLOBAL_SPORTS.map(s => <option key={s} value={s}>{s}</option>)}
-          </select>
+          <div style={{ position: 'relative' }}>
+            <select value={sportFilter} onChange={(e) => setSportFilter(e.target.value)} className="input-field" style={{ height: '34px', borderRadius: '999px', padding: '0 40px 0 14px', fontSize: '13px', fontWeight: 500, backgroundColor: sportFilter !== 'All Sports' ? '#3B82F6' : 'var(--card-surface)', color: sportFilter !== 'All Sports' ? '#ffffff' : '#94A3B8', border: 'var(--border)', outline: 'none', appearance: 'none' }}>
+              <option value="All Sports">All Sports</option>
+              {GLOBAL_SPORTS.map(s => <option key={s} value={s}>{s}</option>)}
+            </select>
+            <ChevronDown size={14} color={sportFilter !== 'All Sports' ? '#ffffff' : '#94A3B8'} style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+          </div>
         </HStack>
       </div>
       <div style={{ padding: '20px' }}>
@@ -593,6 +663,29 @@ function HostPage({ currentUser, defaultSport, setView }) {
   const isFormComplete = sport && venue && (venue !== 'Other (type below)' || customVenue) && date && isTimeValid && totalPlayers >= 2 && isPlayersValid && difficulty && fee !== '';
   const finalVenue = venue === 'Other (type below)' ? customVenue : venue;
 
+  const handleStartTimeFocus = () => {
+    if (!startTime) {
+      const now = new Date();
+      now.setHours(now.getHours() + 1, 0, 0, 0);
+      setStartTime(`${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`);
+    }
+  };
+
+  const handleEndTimeFocus = () => {
+    if (!endTime) {
+      if (startTime) {
+        const [h, m] = startTime.split(':').map(Number);
+        const endD = new Date();
+        endD.setHours(h + 1, m, 0, 0);
+        setEndTime(`${String(endD.getHours()).padStart(2, '0')}:${String(endD.getMinutes()).padStart(2, '0')}`);
+      } else {
+        const now = new Date();
+        now.setHours(now.getHours() + 2, 0, 0, 0);
+        setEndTime(`${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`);
+      }
+    }
+  };
+
   const handlePostActivity = async () => {
     setIsSubmitting(true);
     const { data: activityData, error: activityError } = await supabase.from('activities').insert({ host_id: currentUser.id, sport, venue: finalVenue, date, start_time: startTime, end_time: endTime, total_players: parseInt(totalPlayers), confirmed_players: parseInt(confirmedPlayers), difficulty, fee: parseFloat(fee), description }).select().single();
@@ -631,10 +724,23 @@ function HostPage({ currentUser, defaultSport, setView }) {
       <div style={{ padding: '0 20px' }}>
         {step === 1 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div><label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#64748B', marginBottom: '6px' }}>SPORT</label><select className="input-field" value={sport} onChange={(e) => setSport(e.target.value)}><option value="" disabled>Select a sport</option>{GLOBAL_SPORTS.map(s => <option key={s} value={s}>{s}</option>)}</select></div>
-            <div><label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#64748B', marginBottom: '6px' }}>VENUE</label><select className="input-field" value={venue} onChange={(e) => setVenue(e.target.value)}><option value="" disabled>Select a venue</option>{["UTown Sports Hall", "MPSH 1", "MPSH 2", "MPSH 3", "MPSH 4", "MPSH 5", "MPSH 6", "The Deck", "University Cultural Centre", "Kent Ridge Paddock", "Other (type below)"].map(v => (<option key={v} value={v}>{v}</option>))}</select>{venue === 'Other (type below)' && (<input type="text" className="input-field" placeholder="Enter custom venue name" value={customVenue} onChange={(e) => setCustomVenue(e.target.value)} style={{ marginTop: '8px' }} />)}</div>
+            <div>
+              <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#64748B', marginBottom: '6px' }}>SPORT</label>
+              <div style={{ position: 'relative' }}>
+                <select className="input-field" style={{ appearance: 'none', paddingRight: '40px' }} value={sport} onChange={(e) => setSport(e.target.value)}><option value="" disabled>Select a sport</option>{GLOBAL_SPORTS.map(s => <option key={s} value={s}>{s}</option>)}</select>
+                <ChevronDown size={18} color="#64748B" style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+              </div>
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#64748B', marginBottom: '6px' }}>VENUE</label>
+              <div style={{ position: 'relative' }}>
+                <select className="input-field" style={{ appearance: 'none', paddingRight: '40px' }} value={venue} onChange={(e) => setVenue(e.target.value)}><option value="" disabled>Select a venue</option>{["UTown Sports Hall", "MPSH 1", "MPSH 2", "MPSH 3", "MPSH 4", "MPSH 5", "MPSH 6", "The Deck", "University Cultural Centre", "Kent Ridge Paddock", "Other (type below)"].map(v => (<option key={v} value={v}>{v}</option>))}</select>
+                <ChevronDown size={18} color="#64748B" style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+              </div>
+              {venue === 'Other (type below)' && (<input type="text" className="input-field" placeholder="Enter custom venue name" value={customVenue} onChange={(e) => setCustomVenue(e.target.value)} style={{ marginTop: '8px' }} />)}
+            </div>
             <div><label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#64748B', marginBottom: '6px' }}>DATE</label><input type="date" className="input-field" min={today} value={date} onChange={(e) => setDate(e.target.value)} /></div>
-            <div style={{ display: 'flex', gap: '12px' }}><div style={{ flex: 1 }}><label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#64748B', marginBottom: '6px' }}>START TIME</label><input type="time" className="input-field" value={startTime} onChange={(e) => setStartTime(e.target.value)} /></div><div style={{ flex: 1 }}><label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#64748B', marginBottom: '6px' }}>END TIME</label><input type="time" className="input-field" value={endTime} onChange={(e) => setEndTime(e.target.value)} /></div></div>
+            <div style={{ display: 'flex', gap: '12px' }}><div style={{ flex: 1 }}><label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#64748B', marginBottom: '6px' }}>START TIME</label><input type="time" className="input-field" onFocus={handleStartTimeFocus} onClick={handleStartTimeFocus} value={startTime} onChange={(e) => setStartTime(e.target.value)} /></div><div style={{ flex: 1 }}><label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#64748B', marginBottom: '6px' }}>END TIME</label><input type="time" className="input-field" onFocus={handleEndTimeFocus} onClick={handleEndTimeFocus} value={endTime} onChange={(e) => setEndTime(e.target.value)} /></div></div>
             <div style={{ display: 'flex', gap: '12px' }}><div style={{ flex: 1 }}><label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#64748B', marginBottom: '6px' }}>TOTAL PLAYERS</label><input type="number" min="2" placeholder="e.g. 10" className="input-field" value={totalPlayers} onChange={(e) => setTotalPlayers(e.target.value)} /></div><div style={{ flex: 1 }}><label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#64748B', marginBottom: '6px' }}>CONFIRMED</label><input type="number" min="0" placeholder="e.g. 4" className="input-field" value={confirmedPlayers} onChange={(e) => setConfirmedPlayers(e.target.value)} /></div></div>
             <div><label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#64748B', marginBottom: '6px' }}>DIFFICULTY LEVEL</label><div style={{ display: 'flex', gap: '4px', height: '40px' }}>{['Beginner', 'Intermediate', 'Advanced', 'Professional'].map((level) => (<button key={level} onClick={() => setDifficulty(level)} style={{ flex: 1, borderRadius: '999px', fontSize: '10px', fontWeight: 600, cursor: 'pointer', border: difficulty === level ? 'none' : '1px solid #334155', backgroundColor: difficulty === level ? '#3B82F6' : 'transparent', color: difficulty === level ? '#ffffff' : '#64748B' }}>{level}</button>))}</div></div>
             <div><label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#64748B', marginBottom: '6px' }}>FEE PER PERSON</label><div style={{ position: 'relative' }}><span style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', fontSize: '15px', color: '#64748B', fontWeight: 600 }}>SGD</span><input type="number" step="0.01" min="0" placeholder="0.00" className="input-field" style={{ paddingLeft: '60px' }} value={fee} onChange={(e) => setFee(e.target.value)} /></div></div>
@@ -716,7 +822,6 @@ export default function Home() {
 
   const [onboardingStep, setOnboardingStep] = useState(1);
   const [displayName, setDisplayName] = useState('');
-  const [avatarUrl, setAvatarUrl] = useState(null);
   const [selectedSports, setSelectedSports] = useState([]);
   const [skillLevels, setSkillLevels] = useState({});
 
@@ -753,6 +858,20 @@ export default function Home() {
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+      
+      {/* GLOBAL STYLESHEET INJECTION FOR FIX 5 & FIX 4 TWEAKS */}
+      <style dangerouslySetInnerHTML={{__html: `
+        [data-theme='dark'] input[type="date"]::-webkit-calendar-picker-indicator,
+        [data-theme='dark'] input[type="time"]::-webkit-calendar-picker-indicator {
+          filter: invert(1);
+        }
+        [data-theme='light'] input[type="date"]::-webkit-calendar-picker-indicator,
+        [data-theme='light'] input[type="time"]::-webkit-calendar-picker-indicator {
+          filter: invert(47%) sepia(11%) saturate(760%) hue-rotate(184deg) brightness(94%) contrast(86%);
+        }
+        select.input-field::-ms-expand { display: none; }
+      `}} />
+
       {view === 'auth' && (
         <div className="page-transition" style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
           <div style={{ height: '40vh', background: 'linear-gradient(160deg, #0F172A 0%, #1E3A5F 50%, #0F172A 100%)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '20px', textAlign: 'center' }}>
@@ -784,7 +903,18 @@ export default function Home() {
           {view === 'home' && <HomePage currentUser={currentUser} displayName={displayName} theme={theme} setTheme={setTheme} setView={setView} setHostDefaultSport={setHostDefaultSport} />}
           {view === 'host' && <HostPage currentUser={currentUser} defaultSport={hostDefaultSport} setView={setView} />}
           {view === 'social' && <SocialPage theme={theme} setTheme={setTheme} />}
-          {view === 'events' && <EventsPage theme={theme} setTheme={setTheme} />}
+          {view === 'events' && (
+            <EventsPage 
+              theme={theme} 
+              setTheme={setTheme} 
+              currentUser={currentUser} 
+              onJoinActivity={(act) => {
+                setSelectedActivity(act);
+                setSubView('detail');
+                setView('explore');
+              }} 
+            />
+          )}
           {view === 'explore' && (
             <>
               {subView === 'list' && <ExplorePage onSelectActivity={(act) => { setSelectedActivity(act); setSubView('detail'); }} />}
