@@ -83,17 +83,193 @@ function ShareModal({ isOpen, onShare, onDismiss, actionText }) {
   );
 }
 
-const GLOBAL_SPORTS = [
-  'Football', 'Basketball', 'Badminton', 'Tennis', 'Volleyball', 
-  'Swimming', 'Table Tennis', 'Boxing', 'Gym / Weightlifting', 
-  'Yoga', 'Running', 'Billiards', 'Hockey', 'Gymnastics', 'Other'
-];
+function ToggleSwitch({ isOn, onToggle }) {
+  return (
+    <div onClick={onToggle} style={{ width: '44px', height: '24px', borderRadius: '12px', backgroundColor: isOn ? '#3B82F6' : '#334155', display: 'flex', alignItems: 'center', padding: '2px', cursor: 'pointer', transition: 'background-color 200ms' }}>
+      <div style={{ width: '20px', height: '20px', borderRadius: '50%', backgroundColor: '#ffffff', transform: isOn ? 'translateX(20px)' : 'translateX(0)', transition: 'transform 200ms ease', boxShadow: '0 2px 4px rgba(0,0,0,0.2)' }} />
+    </div>
+  );
+}
 
+const GLOBAL_SPORTS = ['Football', 'Basketball', 'Badminton', 'Tennis', 'Volleyball', 'Swimming', 'Table Tennis', 'Boxing', 'Gym / Weightlifting', 'Yoga', 'Running', 'Billiards', 'Hockey', 'Gymnastics', 'Other'];
 const SPORT_COLORS = { 'Football': '#16213e', 'Basketball': '#f97316', 'Badminton': '#10b981', 'Tennis': '#f59e0b', 'Volleyball': '#8b5cf6', 'Swimming': '#06b6d4', 'Table Tennis': '#ec4899', 'Running': '#f43f5e', 'Other': '#3B82F6' };
 const SPORT_EMOJIS = { 'Football': '⚽', 'Basketball': '🏀', 'Badminton': '🏸', 'Tennis': '🎾', 'Volleyball': '🏐', 'Swimming': '🏊', 'Table Tennis': '🏓', 'Boxing': '🥊', 'Gym / Weightlifting': '🏋️', 'Yoga': '🧘', 'Running': '🏃', 'Billiards': '🎱', 'Hockey': '🏒', 'Gymnastics': '🤸', 'Other': '➕' };
 const SPORT_GRADIENTS = { 'Football': 'linear-gradient(135deg, #1a1a2e, #16213e)', 'Basketball': 'linear-gradient(135deg, #f97316, #ea580c)', 'Badminton': 'linear-gradient(135deg, #10b981, #059669)', 'Tennis': 'linear-gradient(135deg, #f59e0b, #d97706)', 'Volleyball': 'linear-gradient(135deg, #8b5cf6, #7c3aed)', 'Swimming': 'linear-gradient(135deg, #06b6d4, #0891b2)', 'Table Tennis': 'linear-gradient(135deg, #ec4899, #db2777)', 'Running': 'linear-gradient(135deg, #f43f5e, #e11d48)', 'Other': 'linear-gradient(135deg, #475569, #334155)' };
 
-// --- NEW CHAT PAGE COMPONENT ---
+// --- NEW SETTINGS & EDIT PROFILE COMPONENTS ---
+function SettingsPage({ theme, setTheme, setSubView, currentUser, displayName, avatarUrl, onLogout }) {
+  const [showLogout, setShowLogout] = useState(false);
+  const [notifs, setNotifs] = useState({ reminders: true, slots: true, waitlist: true, ratings: true });
+  const [privacy, setPrivacy] = useState({ hostVisibility: 'Public', joinPrivate: false });
+
+  const Row = ({ label, right, hideBorder }) => (
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 0', borderBottom: hideBorder ? 'none' : '1px solid var(--border)' }}>
+      <span style={{ fontSize: '15px', color: 'var(--text-primary)', fontWeight: 500 }}>{label}</span>
+      {right}
+    </div>
+  );
+
+  return (
+    <div className="page-transition" style={{ paddingBottom: '80px', minHeight: '100vh', padding: '20px' }}>
+      <h1 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '24px' }}>Settings</h1>
+      
+      <div style={{ backgroundColor: 'var(--card-surface)', borderRadius: '16px', border: 'var(--border)', padding: '16px', display: 'flex', alignItems: 'center', marginBottom: '24px' }}>
+        <div style={{ width: 56, height: 56, borderRadius: '50%', background: avatarUrl ? `url(${avatarUrl}) center/cover` : 'linear-gradient(135deg, #3B82F6, #1E3A5F)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', marginRight: '16px' }}>
+          {!avatarUrl && <User size={28} />}
+        </div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: '16px', fontWeight: 700 }}>{displayName || currentUser?.user_metadata?.full_name || 'Athlete'}</div>
+        </div>
+        <button onClick={() => setSubView('edit_profile')} style={{ background: 'none', border: 'none', color: '#3B82F6', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>
+          Edit Profile →
+        </button>
+      </div>
+
+      <div style={{ backgroundColor: 'var(--card-surface)', borderRadius: '16px', border: 'var(--border)', padding: '0 16px', marginBottom: '24px' }}>
+        <Row label="Dark Mode" hideBorder right={<ToggleSwitch isOn={theme === 'dark'} onToggle={() => setTheme(theme === 'dark' ? 'light' : 'dark')} />} />
+      </div>
+
+      <div style={{ backgroundColor: 'var(--card-surface)', borderRadius: '16px', border: 'var(--border)', padding: '0 16px', marginBottom: '24px' }}>
+        <Row label="Host Announcements" right={
+          <div style={{ position: 'relative' }}>
+            <select value={privacy.hostVisibility} onChange={e => setPrivacy({...privacy, hostVisibility: e.target.value})} style={{ appearance: 'none', background: 'var(--bg-page)', border: 'var(--border)', color: 'var(--text-primary)', padding: '6px 32px 6px 12px', borderRadius: '999px', fontSize: '13px', outline: 'none', fontWeight: 600 }}>
+              <option value="Public">Public</option><option value="Followers">Followers Only</option><option value="Private">Private</option>
+            </select>
+            <ChevronDown size={14} color="#64748B" style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+          </div>
+        } />
+        <Row label="Hide Joined Games" hideBorder right={<ToggleSwitch isOn={privacy.joinPrivate} onToggle={() => setPrivacy({...privacy, joinPrivate: !privacy.joinPrivate})} />} />
+      </div>
+
+      <div style={{ backgroundColor: 'var(--card-surface)', borderRadius: '16px', border: 'var(--border)', padding: '0 16px', marginBottom: '24px' }}>
+        <Row label="Activity Reminders" right={<ToggleSwitch isOn={notifs.reminders} onToggle={() => setNotifs({...notifs, reminders: !notifs.reminders})} />} />
+        <Row label="New Slot Notifications" right={<ToggleSwitch isOn={notifs.slots} onToggle={() => setNotifs({...notifs, slots: !notifs.slots})} />} />
+        <Row label="Waitlist Alerts" right={<ToggleSwitch isOn={notifs.waitlist} onToggle={() => setNotifs({...notifs, waitlist: !notifs.waitlist})} />} />
+        <Row label="Post-Game Rating Prompts" hideBorder right={<ToggleSwitch isOn={notifs.ratings} onToggle={() => setNotifs({...notifs, ratings: !notifs.ratings})} />} />
+      </div>
+
+      <div style={{ backgroundColor: 'var(--card-surface)', borderRadius: '16px', border: 'var(--border)', padding: '0 16px', marginBottom: '24px' }}>
+        <Row label="Payment Methods" right={<ChevronRight size={20} color="#64748B" />} />
+        <Row label="Privacy Policy" right={<ChevronRight size={20} color="#64748B" />} />
+        <Row label="Terms of Service" hideBorder right={<ChevronRight size={20} color="#64748B" />} />
+      </div>
+
+      <div style={{ backgroundColor: 'var(--card-surface)', borderRadius: '16px', border: '1px solid #FCA5A5', padding: '0 16px', marginBottom: '24px' }}>
+        <div onClick={() => setShowLogout(true)} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 0', cursor: 'pointer' }}>
+          <span style={{ fontSize: '15px', color: '#EF4444', fontWeight: 600 }}>Log Out</span>
+        </div>
+      </div>
+
+      {showLogout && (
+        <div className="page-transition" style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.7)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div style={{ backgroundColor: 'var(--card-surface)', borderRadius: '24px', padding: '24px', width: '100%', maxWidth: '300px', textAlign: 'center', border: 'var(--border)', boxShadow: '0 20px 40px rgba(0,0,0,0.2)' }}>
+            <h3 style={{ fontSize: '18px', fontWeight: 800, marginBottom: '8px' }}>Log Out</h3>
+            <p style={{ fontSize: '14px', color: '#64748B', marginBottom: '24px', lineHeight: 1.5 }}>Are you sure you want to log out?</p>
+            <button onClick={onLogout} className="btn-primary" style={{ marginBottom: '12px', backgroundColor: '#EF4444', border: 'none' }}>Log Out</button>
+            <button onClick={() => setShowLogout(false)} className="btn-primary" style={{ backgroundColor: 'var(--card-surface)', border: '1.5px solid #334155', color: '#94A3B8', boxShadow: 'none' }}>Cancel</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function EditProfilePage({ currentUser, displayName, setDisplayName, avatarUrl, setAvatarUrl, selectedSports, setSelectedSports, skillLevels, setSkillLevels, onBack }) {
+  const [loading, setLoading] = useState(false);
+  const [localName, setLocalName] = useState(displayName || currentUser?.user_metadata?.full_name || '');
+  const [localSports, setLocalSports] = useState([...selectedSports]);
+  const [localSkills, setLocalSkills] = useState({...skillLevels});
+  const [localAvatar, setLocalAvatar] = useState(avatarUrl);
+
+  const toggleSportSelect = (sportName) => {
+    if (localSports.includes(sportName)) {
+      setLocalSports(localSports.filter((s) => s !== sportName));
+      const updated = { ...localSkills }; delete updated[sportName]; setLocalSkills(updated);
+    } else { setLocalSports([...localSports, sportName]); }
+  };
+
+  const handleSkillSelect = (sportName, level) => setLocalSkills({ ...localSkills, [sportName]: level });
+
+  const handleSave = async () => {
+    setLoading(true);
+    setDisplayName(localName); setSelectedSports(localSports); setSkillLevels(localSkills); setAvatarUrl(localAvatar);
+    await supabase.from('profiles').upsert({ id: currentUser.id, sports_interested: localSports, difficulty_level: JSON.stringify(localSkills) });
+    setLoading(false);
+    onBack();
+  };
+
+  return (
+    <div className="page-transition" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: 'var(--bg-page)', paddingBottom: '40px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', padding: '16px 20px', borderBottom: 'var(--border)', backgroundColor: 'var(--bg-page)', position: 'sticky', top: 0, zIndex: 40 }}>
+        <button onClick={onBack} style={{ background: 'none', border: 'none', color: '#64748B', cursor: 'pointer', padding: 0 }}><ChevronLeft size={24} /></button>
+        <h1 style={{ flex: 1, textAlign: 'center', fontSize: '18px', fontWeight: 700 }}>Edit Profile</h1>
+        <button onClick={handleSave} disabled={loading} style={{ background: 'none', border: 'none', color: '#3B82F6', fontSize: '15px', fontWeight: 600, cursor: 'pointer', padding: 0 }}>{loading ? 'Saving...' : 'Save'}</button>
+      </div>
+
+      <div style={{ padding: '24px 20px' }}>
+        <div style={{ alignSelf: 'center', position: 'relative', marginBottom: '32px', display: 'flex', justifyContent: 'center' }}>
+          <div style={{ width: 96, height: 96, borderRadius: '50%', background: localAvatar ? `url(${localAvatar}) center/cover` : 'linear-gradient(135deg, #3B82F6, #1E3A5F)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ffffff' }}>
+            {!localAvatar && <User size={40} />}
+          </div>
+          <label style={{ position: 'absolute', bottom: 0, right: 'calc(50% - 48px)', width: 28, height: 28, borderRadius: '50%', backgroundColor: '#3B82F6', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ffffff', cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>
+            <Camera size={14} />
+            <input type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => { if (e.target.files && e.target.files[0]) setLocalAvatar(URL.createObjectURL(e.target.files[0])); }} />
+          </label>
+        </div>
+
+        <div style={{ marginBottom: '32px' }}>
+          <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#64748B', letterSpacing: '0.06em', marginBottom: '8px' }}>DISPLAY NAME</label>
+          <input type="text" className="input-field" value={localName} onChange={(e) => setLocalName(e.target.value)} />
+        </div>
+
+        <div style={{ marginBottom: '32px' }}>
+          <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#64748B', letterSpacing: '0.06em', marginBottom: '16px' }}>SPORTS</label>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            {['Football', 'Basketball', 'Badminton', 'Tennis', 'Volleyball', 'Swimming', 'Running', 'Other'].map((sport) => {
+              const isSelected = localSports.includes(sport);
+              return (
+                <div key={sport} onClick={() => toggleSportSelect(sport)} style={{ height: 60, borderRadius: 16, backgroundColor: isSelected ? 'rgba(59, 130, 246, 0.15)' : 'var(--card-surface)', border: isSelected ? '2px solid #3B82F6' : 'var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', cursor: 'pointer', transition: 'all 150ms ease' }}>
+                  {isSelected && <div style={{ position: 'absolute', top: 6, right: 6, color: '#3B82F6' }}><Check size={14} /></div>}
+                  <span style={{ fontSize: '14px', fontWeight: 600, color: isSelected ? '#3B82F6' : 'var(--text-primary)' }}>{sport}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {localSports.length > 0 && (
+          <div>
+            <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#64748B', letterSpacing: '0.06em', marginBottom: '16px' }}>SKILL LEVELS</label>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {localSports.map((sportName) => {
+                const currentLevel = localSkills[sportName];
+                return (
+                  <div key={sportName} style={{ backgroundColor: 'var(--card-surface)', border: 'var(--border)', borderRadius: 16, padding: '16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                      <span style={{ fontSize: '15px', fontWeight: 700 }}>{sportName}</span>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px' }}>
+                      {['Beginner', 'Intermediate', 'Advanced', 'Professional'].map((level) => {
+                        const isLevelSelected = currentLevel === level;
+                        return (
+                          <button key={level} type="button" onClick={() => handleSkillSelect(sportName, level)} style={{ height: 36, borderRadius: 999, border: isLevelSelected ? 'none' : 'var(--border)', backgroundColor: isLevelSelected ? '#3B82F6' : 'transparent', color: isLevelSelected ? '#ffffff' : '#94A3B8', fontSize: '11px', fontWeight: 600, cursor: 'pointer', transition: 'all 150ms ease' }}>
+                            {level}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// --- CHAT PAGE ---
 function ChatPage({ activity, currentUser, onBack }) {
   const hostName = activity.host_name || "Alex Tan";
   const [messages, setMessages] = useState([
@@ -150,8 +326,7 @@ function ChatPage({ activity, currentUser, onBack }) {
   );
 }
 
-// --- MAIN PAGES ---
-
+// --- EVENTS PAGE ---
 function EventsPage({ theme, setTheme, currentUser, onJoinActivity, onOpenChat, joinedMocks }) {
   const [tab, setTab] = useState('upcoming');
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -166,8 +341,6 @@ function EventsPage({ theme, setTheme, currentUser, onJoinActivity, onOpenChat, 
     setLoading(true);
     const { data: acts } = await supabase.from('activities').select('*');
     const { data: bks } = await supabase.from('bookings').select('activity_id').eq('user_id', currentUser.id);
-    
-    // Inject Mock Activities into the system
     const allActs = [...(acts || []), ...getMockActivities()];
     setActivities(allActs);
     setMyBookings(bks ? bks.map(b => b.activity_id) : []);
@@ -324,6 +497,7 @@ function EventsPage({ theme, setTheme, currentUser, onJoinActivity, onOpenChat, 
   );
 }
 
+// --- SOCIAL PAGE ---
 function SocialPage({ theme, setTheme }) {
   const [tab, setTab] = useState('foryou');
   const [likedPosts, setLikedPosts] = useState({});
@@ -390,7 +564,8 @@ function SocialPage({ theme, setTheme }) {
   );
 }
 
-function ExplorePage({ onSelectActivity }) {
+// --- EXPLORE & FLOWS ---
+function ExplorePage({ onSelectActivity, joinedMocks }) {
   const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
@@ -405,7 +580,6 @@ function ExplorePage({ onSelectActivity }) {
     if (sportFilter !== 'All Sports') query = query.eq('sport', sportFilter);
     const { data } = await query;
 
-    // Inject Mock Activities and filter them just like real ones
     let mocks = getMockActivities();
     if (selectedDate) mocks = mocks.filter(m => m.date === selectedDate);
     if (sportFilter !== 'All Sports') mocks = mocks.filter(m => m.sport === sportFilter);
@@ -545,8 +719,6 @@ function PaymentPage({ activity, currentUser, onBack, onSuccess, setJoinedMocks 
 
   const handlePay = async () => {
     setLoading(true);
-
-    // Mock Interceptor: Bypass Supabase entirely and simulate success locally
     if (activity.isMock) {
       setJoinedMocks(prev => [...prev, activity.id]);
       onSuccess();
@@ -593,7 +765,6 @@ function PaymentPage({ activity, currentUser, onBack, onSuccess, setJoinedMocks 
   );
 }
 
-// --- HOST, HOME & APP SHELL ---
 function HostPage({ currentUser, defaultSport, setView }) {
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -752,6 +923,180 @@ function HomePage({ currentUser, displayName, theme, setTheme, setView, setHostD
   );
 }
 
+// --- NEW SETTINGS COMPONENTS ---
+function SettingsPage({ theme, setTheme, setSubView, currentUser, displayName, avatarUrl, onLogout }) {
+  const [showLogout, setShowLogout] = useState(false);
+  const [notifs, setNotifs] = useState({ reminders: true, slots: true, waitlist: true, ratings: true });
+  const [privacy, setPrivacy] = useState({ hostVisibility: 'Public', joinPrivate: false });
+
+  const Row = ({ label, right, hideBorder }) => (
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 0', borderBottom: hideBorder ? 'none' : '1px solid var(--border)' }}>
+      <span style={{ fontSize: '15px', color: 'var(--text-primary)', fontWeight: 500 }}>{label}</span>
+      {right}
+    </div>
+  );
+
+  return (
+    <div className="page-transition" style={{ paddingBottom: '80px', minHeight: '100vh', padding: '20px' }}>
+      <h1 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '24px' }}>Settings</h1>
+      
+      <div style={{ backgroundColor: 'var(--card-surface)', borderRadius: '16px', border: 'var(--border)', padding: '16px', display: 'flex', alignItems: 'center', marginBottom: '24px' }}>
+        <div style={{ width: 56, height: 56, borderRadius: '50%', background: avatarUrl ? `url(${avatarUrl}) center/cover` : 'linear-gradient(135deg, #3B82F6, #1E3A5F)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', marginRight: '16px' }}>
+          {!avatarUrl && <User size={28} />}
+        </div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: '16px', fontWeight: 700 }}>{displayName || currentUser?.user_metadata?.full_name || 'Athlete'}</div>
+        </div>
+        <button onClick={() => setSubView('edit_profile')} style={{ background: 'none', border: 'none', color: '#3B82F6', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>
+          Edit Profile →
+        </button>
+      </div>
+
+      <div style={{ backgroundColor: 'var(--card-surface)', borderRadius: '16px', border: 'var(--border)', padding: '0 16px', marginBottom: '24px' }}>
+        <Row label="Dark Mode" hideBorder right={<ToggleSwitch isOn={theme === 'dark'} onToggle={() => setTheme(theme === 'dark' ? 'light' : 'dark')} />} />
+      </div>
+
+      <div style={{ backgroundColor: 'var(--card-surface)', borderRadius: '16px', border: 'var(--border)', padding: '0 16px', marginBottom: '24px' }}>
+        <Row label="Host Announcements" right={
+          <div style={{ position: 'relative' }}>
+            <select value={privacy.hostVisibility} onChange={e => setPrivacy({...privacy, hostVisibility: e.target.value})} style={{ appearance: 'none', background: 'var(--bg-page)', border: 'var(--border)', color: 'var(--text-primary)', padding: '6px 32px 6px 12px', borderRadius: '999px', fontSize: '13px', outline: 'none', fontWeight: 600 }}>
+              <option value="Public">Public</option><option value="Followers">Followers Only</option><option value="Private">Private</option>
+            </select>
+            <ChevronDown size={14} color="#64748B" style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+          </div>
+        } />
+        <Row label="Hide Joined Games" hideBorder right={<ToggleSwitch isOn={privacy.joinPrivate} onToggle={() => setPrivacy({...privacy, joinPrivate: !privacy.joinPrivate})} />} />
+      </div>
+
+      <div style={{ backgroundColor: 'var(--card-surface)', borderRadius: '16px', border: 'var(--border)', padding: '0 16px', marginBottom: '24px' }}>
+        <Row label="Activity Reminders" right={<ToggleSwitch isOn={notifs.reminders} onToggle={() => setNotifs({...notifs, reminders: !notifs.reminders})} />} />
+        <Row label="New Slot Notifications" right={<ToggleSwitch isOn={notifs.slots} onToggle={() => setNotifs({...notifs, slots: !notifs.slots})} />} />
+        <Row label="Waitlist Alerts" right={<ToggleSwitch isOn={notifs.waitlist} onToggle={() => setNotifs({...notifs, waitlist: !notifs.waitlist})} />} />
+        <Row label="Post-Game Rating Prompts" hideBorder right={<ToggleSwitch isOn={notifs.ratings} onToggle={() => setNotifs({...notifs, ratings: !notifs.ratings})} />} />
+      </div>
+
+      <div style={{ backgroundColor: 'var(--card-surface)', borderRadius: '16px', border: 'var(--border)', padding: '0 16px', marginBottom: '24px' }}>
+        <Row label="Payment Methods" right={<ChevronRight size={20} color="#64748B" />} />
+        <Row label="Privacy Policy" right={<ChevronRight size={20} color="#64748B" />} />
+        <Row label="Terms of Service" hideBorder right={<ChevronRight size={20} color="#64748B" />} />
+      </div>
+
+      <div style={{ backgroundColor: 'var(--card-surface)', borderRadius: '16px', border: '1px solid #FCA5A5', padding: '0 16px', marginBottom: '24px' }}>
+        <div onClick={() => setShowLogout(true)} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 0', cursor: 'pointer' }}>
+          <span style={{ fontSize: '15px', color: '#EF4444', fontWeight: 600 }}>Log Out</span>
+        </div>
+      </div>
+
+      {showLogout && (
+        <div className="page-transition" style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.7)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div style={{ backgroundColor: 'var(--card-surface)', borderRadius: '24px', padding: '24px', width: '100%', maxWidth: '300px', textAlign: 'center', border: 'var(--border)', boxShadow: '0 20px 40px rgba(0,0,0,0.2)' }}>
+            <h3 style={{ fontSize: '18px', fontWeight: 800, marginBottom: '8px' }}>Log Out</h3>
+            <p style={{ fontSize: '14px', color: '#64748B', marginBottom: '24px', lineHeight: 1.5 }}>Are you sure you want to log out?</p>
+            <button onClick={onLogout} className="btn-primary" style={{ marginBottom: '12px', backgroundColor: '#EF4444', border: 'none' }}>Log Out</button>
+            <button onClick={() => setShowLogout(false)} className="btn-primary" style={{ backgroundColor: 'var(--card-surface)', border: '1.5px solid #334155', color: '#94A3B8', boxShadow: 'none' }}>Cancel</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function EditProfilePage({ currentUser, displayName, setDisplayName, avatarUrl, setAvatarUrl, selectedSports, setSelectedSports, skillLevels, setSkillLevels, onBack }) {
+  const [loading, setLoading] = useState(false);
+  const [localName, setLocalName] = useState(displayName || currentUser?.user_metadata?.full_name || '');
+  const [localSports, setLocalSports] = useState([...selectedSports]);
+  const [localSkills, setLocalSkills] = useState({...skillLevels});
+  const [localAvatar, setLocalAvatar] = useState(avatarUrl);
+
+  const toggleSportSelect = (sportName) => {
+    if (localSports.includes(sportName)) {
+      setLocalSports(localSports.filter((s) => s !== sportName));
+      const updated = { ...localSkills }; delete updated[sportName]; setLocalSkills(updated);
+    } else { setLocalSports([...localSports, sportName]); }
+  };
+
+  const handleSkillSelect = (sportName, level) => setLocalSkills({ ...localSkills, [sportName]: level });
+
+  const handleSave = async () => {
+    setLoading(true);
+    setDisplayName(localName); setSelectedSports(localSports); setSkillLevels(localSkills); setAvatarUrl(localAvatar);
+    await supabase.from('profiles').upsert({ id: currentUser.id, sports_interested: localSports, difficulty_level: JSON.stringify(localSkills) });
+    setLoading(false);
+    onBack();
+  };
+
+  return (
+    <div className="page-transition" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: 'var(--bg-page)', paddingBottom: '40px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', padding: '16px 20px', borderBottom: 'var(--border)', backgroundColor: 'var(--bg-page)', position: 'sticky', top: 0, zIndex: 40 }}>
+        <button onClick={onBack} style={{ background: 'none', border: 'none', color: '#64748B', cursor: 'pointer', padding: 0 }}><ChevronLeft size={24} /></button>
+        <h1 style={{ flex: 1, textAlign: 'center', fontSize: '18px', fontWeight: 700 }}>Edit Profile</h1>
+        <button onClick={handleSave} disabled={loading} style={{ background: 'none', border: 'none', color: '#3B82F6', fontSize: '15px', fontWeight: 600, cursor: 'pointer', padding: 0 }}>{loading ? 'Saving...' : 'Save'}</button>
+      </div>
+
+      <div style={{ padding: '24px 20px' }}>
+        <div style={{ alignSelf: 'center', position: 'relative', marginBottom: '32px', display: 'flex', justifyContent: 'center' }}>
+          <div style={{ width: 96, height: 96, borderRadius: '50%', background: localAvatar ? `url(${localAvatar}) center/cover` : 'linear-gradient(135deg, #3B82F6, #1E3A5F)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ffffff' }}>
+            {!localAvatar && <User size={40} />}
+          </div>
+          <label style={{ position: 'absolute', bottom: 0, right: 'calc(50% - 48px)', width: 28, height: 28, borderRadius: '50%', backgroundColor: '#3B82F6', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ffffff', cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>
+            <Camera size={14} />
+            <input type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => { if (e.target.files && e.target.files[0]) setLocalAvatar(URL.createObjectURL(e.target.files[0])); }} />
+          </label>
+        </div>
+
+        <div style={{ marginBottom: '32px' }}>
+          <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#64748B', letterSpacing: '0.06em', marginBottom: '8px' }}>DISPLAY NAME</label>
+          <input type="text" className="input-field" value={localName} onChange={(e) => setLocalName(e.target.value)} />
+        </div>
+
+        <div style={{ marginBottom: '32px' }}>
+          <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#64748B', letterSpacing: '0.06em', marginBottom: '16px' }}>SPORTS</label>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            {['Football', 'Basketball', 'Badminton', 'Tennis', 'Volleyball', 'Swimming', 'Running', 'Other'].map((sport) => {
+              const isSelected = localSports.includes(sport);
+              return (
+                <div key={sport} onClick={() => toggleSportSelect(sport)} style={{ height: 60, borderRadius: 16, backgroundColor: isSelected ? 'rgba(59, 130, 246, 0.15)' : 'var(--card-surface)', border: isSelected ? '2px solid #3B82F6' : 'var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', cursor: 'pointer', transition: 'all 150ms ease' }}>
+                  {isSelected && <div style={{ position: 'absolute', top: 6, right: 6, color: '#3B82F6' }}><Check size={14} /></div>}
+                  <span style={{ fontSize: '14px', fontWeight: 600, color: isSelected ? '#3B82F6' : 'var(--text-primary)' }}>{sport}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {localSports.length > 0 && (
+          <div>
+            <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#64748B', letterSpacing: '0.06em', marginBottom: '16px' }}>SKILL LEVELS</label>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {localSports.map((sportName) => {
+                const currentLevel = localSkills[sportName];
+                return (
+                  <div key={sportName} style={{ backgroundColor: 'var(--card-surface)', border: 'var(--border)', borderRadius: 16, padding: '16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                      <span style={{ fontSize: '15px', fontWeight: 700 }}>{sportName}</span>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px' }}>
+                      {['Beginner', 'Intermediate', 'Advanced', 'Professional'].map((level) => {
+                        const isLevelSelected = currentLevel === level;
+                        return (
+                          <button key={level} type="button" onClick={() => handleSkillSelect(sportName, level)} style={{ height: 36, borderRadius: 999, border: isLevelSelected ? 'none' : 'var(--border)', backgroundColor: isLevelSelected ? '#3B82F6' : 'transparent', color: isLevelSelected ? '#ffffff' : '#94A3B8', fontSize: '11px', fontWeight: 600, cursor: 'pointer', transition: 'all 150ms ease' }}>
+                            {level}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// --- MAIN APP ---
 export default function Home() {
   const [theme, setTheme] = useState('dark');
   const [view, setView] = useState('auth'); 
@@ -772,6 +1117,7 @@ export default function Home() {
 
   const [onboardingStep, setOnboardingStep] = useState(1);
   const [displayName, setDisplayName] = useState('');
+  const [avatarUrl, setAvatarUrl] = useState(null);
   const [selectedSports, setSelectedSports] = useState([]);
   const [skillLevels, setSkillLevels] = useState({});
 
@@ -804,6 +1150,13 @@ export default function Home() {
       await supabase.from('profiles').upsert({ id: currentUser.id, sports_interested: selectedSports, difficulty_level: JSON.stringify(skillLevels) });
     }
     setView('home');
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setCurrentUser(null);
+    setView('auth');
+    setSubView('list');
   };
 
   return (
@@ -879,8 +1232,12 @@ export default function Home() {
               )}
             </>
           )}
-
-          {view === 'settings' && <div style={{ padding: '80px 20px', textAlign: 'center' }}>Settings Page Coming Soon (Step 11)</div>}
+          {view === 'settings' && (
+            <>
+              {subView === 'list' && <SettingsPage theme={theme} setTheme={setTheme} setSubView={setSubView} currentUser={currentUser} displayName={displayName} avatarUrl={avatarUrl} onLogout={handleLogout} />}
+              {subView === 'edit_profile' && <EditProfilePage currentUser={currentUser} displayName={displayName} setDisplayName={setDisplayName} avatarUrl={avatarUrl} setAvatarUrl={setAvatarUrl} selectedSports={selectedSports} setSelectedSports={setSelectedSports} skillLevels={skillLevels} setSkillLevels={setSkillLevels} onBack={() => setSubView('list')} />}
+            </>
+          )}
           
           {view !== 'host' && subView === 'list' && <BottomNav currentView={view} setView={setView} />}
         </>
