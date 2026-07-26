@@ -34,10 +34,10 @@ const SPORT_GRADIENTS = { 'Football': 'linear-gradient(135deg, #1a1a2e, #16213e)
 function HStack({ children, style = {}, ...props }) {
   return (
     <div
-      style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', overflowX: 'auto', scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch', ...style }}
+      className="no-scrollbar"
+      style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', overflowX: 'auto', msOverflowStyle: 'none', scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch', ...style }}
       {...props}
     >
-      <style>{`div::-webkit-scrollbar { display: none; }`}</style>
       {children}
     </div>
   );
@@ -786,6 +786,176 @@ function PaymentPage({ activity, currentUser, onBack, onSuccess, setJoinedMocks 
   );
 }
 
+function HostPage({ currentUser, displayName, defaultSport, setView }) {
+  const [step, setStep] = useState(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [sport, setSport] = useState(defaultSport || '');
+  const [venue, setVenue] = useState('');
+  const [customVenue, setCustomVenue] = useState('');
+  const [date, setDate] = useState('');
+  const [startTime, setStartTime] = useState('');
+  const [endTime, setEndTime] = useState('');
+  const [totalPlayers, setTotalPlayers] = useState('');
+  const [confirmedPlayers, setConfirmedPlayers] = useState('');
+  const [difficulty, setDifficulty] = useState('');
+  const [fee, setFee] = useState('');
+  const [description, setDescription] = useState('');
+
+  const today = new Date().toISOString().split('T')[0];
+  const isTimeValid = startTime && endTime && endTime > startTime;
+  const isPlayersValid = parseInt(confirmedPlayers) >= 0 && parseInt(confirmedPlayers) < parseInt(totalPlayers);
+  const isFormComplete = sport && venue && (venue !== 'Other (type below)' || customVenue) && date && isTimeValid && totalPlayers >= 2 && isPlayersValid && difficulty && fee !== '';
+  const finalVenue = venue === 'Other (type below)' ? customVenue : venue;
+
+  const handleStartTimeFocus = () => {
+    if (!startTime) {
+      const now = new Date(); now.setHours(now.getHours() + 1, 0, 0, 0);
+      setStartTime(`${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`);
+    }
+  };
+
+  const handleEndTimeFocus = () => {
+    if (!endTime) {
+      if (startTime) {
+        const [h, m] = startTime.split(':').map(Number);
+        const endD = new Date(); endD.setHours(h + 1, m, 0, 0);
+        setEndTime(`${String(endD.getHours()).padStart(2, '0')}:${String(endD.getMinutes()).padStart(2, '0')}`);
+      } else {
+        const now = new Date(); now.setHours(now.getHours() + 2, 0, 0, 0);
+        setEndTime(`${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`);
+      }
+    }
+  };
+
+  const handlePostActivity = async () => {
+    setIsSubmitting(true);
+    const { data: activityData, error: activityError } = await supabase.from('activities').insert({ host_id: currentUser.id, sport, venue: finalVenue, date, start_time: startTime, end_time: endTime, total_players: parseInt(totalPlayers), confirmed_players: parseInt(confirmedPlayers), difficulty, fee: parseFloat(fee), description }).select().single();
+    if (!activityError && activityData) { 
+      await supabase.from('chats').insert({ activity_id: activityData.id }); 
+      setStep(3); setShowShareModal(true);
+    }
+    setIsSubmitting(false);
+  };
+
+  if (step === 3) return (
+    <div className="page-transition" style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '20px', textAlign: 'center', minHeight: '100vh' }}>
+      <CheckCircle size={64} color="#10B981" style={{ marginBottom: '24px' }} />
+      <h1 style={{ fontSize: '28px', fontWeight: 800, marginBottom: '8px' }}>Activity Posted!</h1>
+      <p style={{ fontSize: '16px', color: '#64748B', marginBottom: '40px' }}>Waiting for {parseInt(totalPlayers) - parseInt(confirmedPlayers)} more players...</p>
+      <button onClick={() => setView('events')} className="btn-primary" style={{ marginBottom: '12px' }}>View My Events</button>
+      <button onClick={() => setView('home')} className="btn-primary" style={{ backgroundColor: 'transparent', border: '1.5px solid #3B82F6', color: '#3B82F6', boxShadow: 'none' }}>Back to Home</button>
+      <ShareModal 
+        isOpen={showShareModal} 
+        actionText="hosted a new session" 
+        onShare={async () => {
+          await supabase.from('posts').insert({ 
+            user_id: currentUser.id, user_name: displayName || currentUser.user_metadata?.full_name || 'Athlete',
+            text: 'hosted a new session', sport, venue: finalVenue, date 
+          });
+          setShowShareModal(false);
+          setView('events');
+        }} 
+        onDismiss={() => { setShowShareModal(false); setView('events'); }} 
+      />
+    </div>
+  );
+
+  return (
+    <div className="page-transition" style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', paddingBottom: '40px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', padding: '16px 20px', borderBottom: 'var(--border)' }}>
+        <button onClick={() => setView('home')} style={{ background: 'none', border: 'none', color: '#64748B', cursor: 'pointer', padding: 0 }}><ChevronLeft size={24} /></button>
+        <h1 style={{ flex: 1, textAlign: 'center', fontSize: '18px', fontWeight: 700, marginRight: '24px' }}>Host an Activity</h1>
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px 20px' }}>
+        <div style={{ width: 24, height: 24, borderRadius: '50%', backgroundColor: '#3B82F6', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 700 }}>{step === 2 ? <Check size={14} /> : 1}</div>
+        <div style={{ width: '40px', height: '2px', backgroundColor: step === 2 ? '#10B981' : '#334155', margin: '0 8px' }} />
+        <div style={{ width: 24, height: 24, borderRadius: '50%', backgroundColor: step === 2 ? '#3B82F6' : 'transparent', border: step === 2 ? 'none' : '2px solid #334155', color: step === 2 ? 'white' : '#64748B', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 700 }}>2</div>
+        <div style={{ width: '40px', height: '2px', backgroundColor: '#334155', margin: '0 8px' }} />
+        <div style={{ width: 24, height: 24, borderRadius: '50%', border: '2px solid #334155', color: '#64748B', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 700 }}>3</div>
+      </div>
+      <div style={{ padding: '0 20px' }}>
+        {step === 1 && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div>
+              <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#64748B', marginBottom: '6px' }}>SPORT</label>
+              <div style={{ position: 'relative' }}>
+                <select className="input-field" style={{ appearance: 'none', paddingRight: '40px' }} value={sport} onChange={(e) => setSport(e.target.value)}><option value="" disabled>Select a sport</option>{GLOBAL_SPORTS.map(s => <option key={s} value={s}>{s}</option>)}</select>
+                <ChevronDown size={18} color="#64748B" style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+              </div>
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#64748B', marginBottom: '6px' }}>VENUE</label>
+              <div style={{ position: 'relative' }}>
+                <select className="input-field" style={{ appearance: 'none', paddingRight: '40px' }} value={venue} onChange={(e) => setVenue(e.target.value)}><option value="" disabled>Select a venue</option>{["UTown Sports Hall", "MPSH 1", "MPSH 2", "MPSH 3", "MPSH 4", "MPSH 5", "MPSH 6", "The Deck", "University Cultural Centre", "Kent Ridge Paddock", "Other (type below)"].map(v => (<option key={v} value={v}>{v}</option>))}</select>
+                <ChevronDown size={18} color="#64748B" style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+              </div>
+              {venue === 'Other (type below)' && (<input type="text" className="input-field" placeholder="Enter custom venue name" value={customVenue} onChange={(e) => setCustomVenue(e.target.value)} style={{ marginTop: '8px' }} />)}
+            </div>
+            <div><label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#64748B', marginBottom: '6px' }}>DATE</label><input type="date" className="input-field" min={today} value={date} onChange={(e) => setDate(e.target.value)} /></div>
+            <div style={{ display: 'flex', gap: '12px' }}><div style={{ flex: 1 }}><label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#64748B', marginBottom: '6px' }}>START TIME</label><input type="time" className="input-field" onFocus={handleStartTimeFocus} onClick={handleStartTimeFocus} value={startTime} onChange={(e) => setStartTime(e.target.value)} /></div><div style={{ flex: 1 }}><label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#64748B', marginBottom: '6px' }}>END TIME</label><input type="time" className="input-field" onFocus={handleEndTimeFocus} onClick={handleEndTimeFocus} value={endTime} onChange={(e) => setEndTime(e.target.value)} /></div></div>
+            <div style={{ display: 'flex', gap: '12px' }}><div style={{ flex: 1 }}><label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#64748B', marginBottom: '6px' }}>TOTAL PLAYERS</label><input type="number" min="2" placeholder="e.g. 10" className="input-field" value={totalPlayers} onChange={(e) => setTotalPlayers(e.target.value)} /></div><div style={{ flex: 1 }}><label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#64748B', marginBottom: '6px' }}>CONFIRMED</label><input type="number" min="0" placeholder="e.g. 4" className="input-field" value={confirmedPlayers} onChange={(e) => setConfirmedPlayers(e.target.value)} /></div></div>
+            <div><label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#64748B', marginBottom: '6px' }}>DIFFICULTY LEVEL</label><div style={{ display: 'flex', gap: '4px', height: '40px' }}>{['Beginner', 'Intermediate', 'Advanced', 'Professional'].map((level) => (<button key={level} onClick={() => setDifficulty(level)} style={{ flex: 1, borderRadius: '999px', fontSize: '10px', fontWeight: 600, cursor: 'pointer', border: difficulty === level ? 'none' : '1px solid #334155', backgroundColor: difficulty === level ? '#3B82F6' : 'transparent', color: difficulty === level ? '#ffffff' : '#64748B' }}>{level}</button>))}</div></div>
+            <div><label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#64748B', marginBottom: '6px' }}>FEE PER PERSON</label><div style={{ position: 'relative' }}><span style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', fontSize: '15px', color: '#64748B', fontWeight: 600 }}>SGD</span><input type="number" step="0.01" min="0" placeholder="0.00" className="input-field" style={{ paddingLeft: '60px' }} value={fee} onChange={(e) => setFee(e.target.value)} /></div></div>
+            <div><label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#64748B', marginBottom: '6px' }}>DESCRIPTION (OPTIONAL)</label><textarea className="input-field" maxLength={300} style={{ height: 'auto', padding: '16px', resize: 'none' }} rows={4} placeholder="Add any extra details..." value={description} onChange={(e) => setDescription(e.target.value)} /></div>
+            <button onClick={() => setStep(2)} disabled={!isFormComplete} className="btn-primary" style={{ marginTop: '16px' }}>Review Activity →</button>
+          </div>
+        )}
+        {step === 2 && (
+          <div className="page-transition">
+            <div style={{ backgroundColor: 'var(--card-surface)', borderRadius: '16px', padding: '16px', border: 'var(--border)', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}><span style={{ fontSize: '14px', color: '#64748B' }}>Sport</span><span style={{ fontSize: '15px', fontWeight: 700 }}>{sport}</span></div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}><span style={{ fontSize: '14px', color: '#64748B' }}>Venue</span><span style={{ fontSize: '15px', fontWeight: 600 }}>{finalVenue}</span></div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}><span style={{ fontSize: '14px', color: '#64748B' }}>Date</span><span style={{ fontSize: '15px', fontWeight: 600 }}>{date}</span></div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}><span style={{ fontSize: '14px', color: '#64748B' }}>Time</span><span style={{ fontSize: '15px', fontWeight: 600 }}>{startTime} - {endTime}</span></div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}><span style={{ fontSize: '14px', color: '#64748B' }}>Fee</span><span style={{ fontSize: '15px', fontWeight: 600 }}>SGD {parseFloat(fee).toFixed(2)}</span></div>
+            </div>
+            <button onClick={handlePostActivity} disabled={isSubmitting} className="btn-primary" style={{ marginTop: '24px', marginBottom: '12px' }}>{isSubmitting ? 'Posting...' : 'Post Activity'}</button>
+            <button onClick={() => setStep(1)} disabled={isSubmitting} className="btn-primary" style={{ backgroundColor: 'transparent', border: '1.5px solid #3B82F6', color: '#3B82F6', boxShadow: 'none' }}>Edit Details</button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function HomePage({ currentUser, displayName, theme, setTheme, setView, setHostDefaultSport }) {
+  const userFirstName = displayName || currentUser?.user_metadata?.full_name || 'Athlete';
+  return (
+    <div className="page-transition" style={{ paddingBottom: '80px', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ position: 'sticky', top: 0, backgroundColor: 'var(--bg-page)', borderBottom: 'var(--border)', padding: '16px 20px', zIndex: 40, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Zap size={20} color="#3B82F6" fill="#3B82F6" /><span style={{ fontSize: '20px', fontWeight: 800 }}>SportAnytime</span></div>
+          <p style={{ fontSize: '16px', fontWeight: 600, marginTop: '4px' }}>Hey {userFirstName} 👋</p>
+        </div>
+        <div style={{ display: 'flex', gap: '16px' }}>
+          <Bell size={22} color="#64748B" />
+          <button onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>{theme === 'dark' ? <Sun size={22} color="#64748B" /> : <Moon size={22} color="#64748B" />}</button>
+        </div>
+      </div>
+      <div style={{ padding: '24px 20px', borderBottom: 'var(--border)' }}>
+        <h2 style={{ fontSize: '20px', fontWeight: 700 }}>Hosting a Sport?</h2>
+        <p style={{ fontSize: '13px', color: '#64748B', marginTop: '4px', marginBottom: '16px' }}>You&apos;ve got the venue — find your players.</p>
+        <HStack style={{ margin: '0 -20px', padding: '0 20px', gap: '10px' }}>
+          {GLOBAL_SPORTS.slice(0, 8).map(s => (
+            <div key={s} onClick={() => { setHostDefaultSport(s); setView('host'); }} style={{ minWidth: '100px', height: '110px', borderRadius: '16px', background: SPORT_GRADIENTS[s] || 'linear-gradient(135deg, #3B82F6, #1E3A5F)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+              <span style={{ fontSize: '28px', marginBottom: '8px' }}>{SPORT_EMOJIS[s]}</span><span style={{ fontSize: '12px', fontWeight: 600, color: '#ffffff' }}>{s}</span>
+            </div>
+          ))}
+        </HStack>
+        <button onClick={() => { setHostDefaultSport(''); setView('host'); }} className="btn-primary" style={{ marginTop: '24px' }}>+ Host an Activity</button>
+      </div>
+      <div style={{ padding: '24px 20px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+          <h2 style={{ fontSize: '20px', fontWeight: 700 }}>Find a Game</h2>
+          <button onClick={() => setView('explore')} style={{ background: 'none', border: 'none', color: '#3B82F6', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}>See All →</button>
+        </div>
+        <p style={{ fontSize: '13px', color: '#64748B' }}>Tap &quot;See All →&quot; or use the Explore tab below to browse all live activities.</p>
+      </div>
+    </div>
+  );
+}
+
 // --- MAIN APP ---
 export default function Home() {
   const [theme, setTheme] = useState('dark');
@@ -860,6 +1030,7 @@ export default function Home() {
         [data-theme='light'] input[type="date"]::-webkit-calendar-picker-indicator,
         [data-theme='light'] input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(47%) sepia(11%) saturate(760%) hue-rotate(184deg) brightness(94%) contrast(86%); }
         select.input-field::-ms-expand { display: none; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
       `}} />
 
       {view === 'auth' && (
@@ -986,7 +1157,7 @@ export default function Home() {
         <>
           {view === 'home' && <HomePage currentUser={currentUser} displayName={displayName} theme={theme} setTheme={setTheme} setView={setView} setHostDefaultSport={setHostDefaultSport} />}
           {view === 'host' && (
-            <HostPage currentUser={currentUser} defaultSport={hostDefaultSport} setView={setView} />
+            <HostPage currentUser={currentUser} displayName={displayName} defaultSport={hostDefaultSport} setView={setView} />
           )}
           {view === 'social' && <SocialPage theme={theme} setTheme={setTheme} />}
           {view === 'events' && (
