@@ -201,7 +201,7 @@ with a dense, captive audience. NUS has thousands of student athletes, its
 own facilities, and a strong sports culture — the ideal environment to
 validate the product before expanding Singapore-wide.
 
-### Why a Rep Score?
+### Why a Rep Score? (plan)
 Trust is the biggest barrier to showing up and playing with strangers. A
 transparent, multi-factor reputation score reduces anxiety for solo players
 joining existing groups and incentivises reliable, respectful behaviour.
