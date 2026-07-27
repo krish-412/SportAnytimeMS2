@@ -101,15 +101,6 @@ The app handles everything in between.
   - After 3 dismissals, skill level is auto-adjusted with a notification
 - Public profiles show both Self-rated and Community-rated skill scores
 
-### ⚡ Rep Score
-- Every user has a public Rep Score out of 100 (e.g. ⚡ 94 Rep)
-- Calculated from three factors:
-  - Reliability (40%) — attendance vs cancellation history
-  - Sportsmanship (40%) — average peer rating received
-  - Activity Count (20%) — total games played
-- Colour coded: green (80+), amber (50–79), red (below 50)
-- Visible on profiles, player rosters, and activity cards
-
 ### 💬 Group Chat
 - Auto-created for every activity when it is posted
 - Accessible to confirmed participants only (host + paid players)
